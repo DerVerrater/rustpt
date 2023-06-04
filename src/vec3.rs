@@ -85,7 +85,7 @@ impl Vec3{
         // now with gamma correction
         let r = (self.x * scale).sqrt();
         let g = (self.y * scale).sqrt();
-        let b = (self.y * scale).sqrt();
+        let b = (self.z * scale).sqrt();
         
         let ir = (Vec3::clamp(r, 0.0, 0.999) * 256.0) as i32;
         let ig = (Vec3::clamp(g, 0.0, 0.999) * 256.0) as i32;

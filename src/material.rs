@@ -12,7 +12,7 @@ use rand::distributions::Uniform;
 #[derive(Copy, Clone, Debug)]
 pub enum Material{
     Lambertian{ albedo: Vec3 },
-    Metal{ albedo:Vec3 },
+    Metal{ albedo:Vec3, fuzz: f32 },
 }
 
 impl Material {
@@ -21,7 +21,7 @@ impl Material {
         ray_in: Ray,
         rec: HitRecord,
         attenuation: &mut Vec3,
-        scattered:&mut Ray,
+        scattered: &mut Ray,
         srng: &mut SmallRng,
         distrib: Uniform<f32>,
     ) -> bool {
@@ -46,19 +46,18 @@ impl Material {
                 *attenuation = *albedo; // deref on both sides? Wacky
                 return true;
             },
-            Material::Metal { albedo } => {
+            Material::Metal { albedo, fuzz } => {
                 let reflected = Vec3::reflect(
                     Vec3::as_unit(&ray_in.dir),
                     rec.normal
                 );
                 *scattered = Ray{
                     orig: rec.p,
-                    dir: reflected,
+                    dir: reflected + Vec3::rand_in_unit_sphere(srng, distrib) * *fuzz,
                 };
                 *attenuation = *albedo;
                 return Vec3::dot(scattered.dir, rec.normal) > 0.0;
             },
-            _ => return false,
         }
     }
 }

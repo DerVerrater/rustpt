@@ -7,12 +7,10 @@ use crate::hittable::{
 use crate::material::Material;
 use crate::ray::Ray;
 
-use std::rc::Rc;
-
 pub struct Sphere{
     pub center: Vec3,
     pub radius: f32,
-    pub material: Option<Rc<dyn Material>>,
+    pub material: Option<Material>,
 }
 
 impl Hittable for Sphere {
@@ -39,7 +37,7 @@ impl Hittable for Sphere {
         let mut record = HitRecord{
             p: r.at(root),
             normal: (r.at(root) - self.center) / self.radius,
-            material: self.material.clone(),
+            material: self.material,
             t: root,
             front_face: false,
         };

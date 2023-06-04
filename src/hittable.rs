@@ -2,12 +2,11 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::material::Material;
-use std::rc::Rc;
 
 pub struct HitRecord{
     pub p: Vec3,
     pub normal: Vec3,
-    pub material: Option<Rc<dyn Material>>,
+    pub material: Option<Material>,
     pub t: f32,
     pub front_face: bool,
 }

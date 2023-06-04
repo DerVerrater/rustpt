@@ -92,6 +92,18 @@ impl Vec3{
         let ib = (Vec3::clamp(b, 0.0, 0.999) * 256.0) as i32;
         format!("{} {} {}", ir, ig, ib)
     }
+    
+    pub fn near_zero(&self) -> bool {
+        let epsilon: f32 = 1e-8;
+        return 
+            self.x < epsilon &&
+            self.y < epsilon &&
+            self.z < epsilon
+    }
+    
+    pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+        return v - n * Vec3::dot(v, n) * 2.0;
+    }
 
     pub fn dot(left: Vec3, right: Vec3) -> f32{
         left.x * right.x +

@@ -14,6 +14,7 @@ use crate::hittable::{
     Hittable,
     HittableList,
 };
+use crate::material::Material;
 
 use crate::camera::Camera;
 use rand::{Rng, SeedableRng};
@@ -32,25 +33,52 @@ fn main() {
     
     // world
 
+    let mat_ground = Material::Lambertian{ albedo: Vec3::new(0.8, 0.8, 0.0) };
+    let mat_center = Material::Lambertian{ albedo: Vec3::new(0.7, 0.3, 0.3) };
+    let mat_left   = Material::Metal{ albedo: Vec3::new(0.8, 0.8, 0.8) };
+    let mat_right  = Material::Metal{ albedo: Vec3::new(0.8, 0.6, 0.2) };
+
     let mut world = HittableList::new();
-    world.add(
-        Box::new(
-            Sphere{
-                center: Vec3{ x: 0.0, y: 0.0, z: -1.0},
-                radius: 0.5,
-                material: None,
-            }
-        )
-    );
     world.add(
         Box::new(
             Sphere{
                 center: Vec3{ x: 0.0, y: -100.5, z: -1.0 },
                 radius: 100.0,
-                material: None,
+                material: Some(mat_ground),
             }
         )
     );
+
+    world.add(
+        Box::new(
+            Sphere{
+                center: Vec3{ x: 0.0, y: 0.0, z: -1.0},
+                radius: 0.5,
+                material: Some(mat_center),
+            }
+        )
+    );
+
+    world.add(
+        Box::new(
+            Sphere{
+                center: Vec3::new(-1.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Some(mat_left),
+            }
+        )
+    );
+    
+    world.add(
+        Box::new(
+            Sphere{
+                center: Vec3::new( 1.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Some(mat_right),
+            }
+        )
+    );
+
     // camera
 
     let cam = Camera::new();
@@ -78,19 +106,26 @@ fn main() {
 fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
     // recursion depth guard
     if depth == 0 {
-        return Vec3::new(0.0, 0.0, 0.0);
+        return Vec3::zero();
     }
 
     if let Some(rec) = world.hit(r, 0.001, f32::INFINITY){
-        let target = rec.p + rec.normal + Vec3::rand_unit_vector(srng, distrib);
-        return ray_color(
-            Ray{
-                orig: rec.p,
-                dir: target - rec.p,
+        let mut scattered = Ray {
+            orig: Vec3::zero(),
+            dir: Vec3::zero()
+        };
+        let mut attenuation = Vec3::zero();
+        match rec.material {
+            Some(mat) => {
+                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng, distrib) {
+                    return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
+                };
+
             },
-            world, depth, srng, distrib
-        ) * 0.5;
+            None => return Vec3::zero(),
+        }
     }
+
     let unitdir = Vec3::as_unit(&r.dir);
     let t = 0.5 * (unitdir.y + 1.0);
     return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t

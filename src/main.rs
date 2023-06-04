@@ -28,7 +28,7 @@ fn main() {
         (400.0 / aspect_ratio) as i32
     );
     let samples_per_pixel = 100;
-    let max_depth = 50;
+    let max_depth = 100;
     
     // world
 
@@ -37,7 +37,7 @@ fn main() {
         Box::new(
             Sphere{
                 center: Vec3{ x: 0.0, y: 0.0, z: -1.0},
-                radius: 0.5
+                radius: 0.5,
                 material: None,
             }
         )
@@ -75,7 +75,7 @@ fn main() {
     eprintln!("Done!");
 }
 
-fn ray_color(r: Ray, world: &HittableList, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
+fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
     // recursion depth guard
     if depth == 0 {
         return Vec3::new(0.0, 0.0, 0.0);

@@ -2,16 +2,17 @@
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::material::Material;
+use std::rc::Rc;
 
-pub struct HitRecord<'a>{
+pub struct HitRecord{
     pub p: Vec3,
     pub normal: Vec3,
-    pub material: Option<&'a Material>,
+    pub material: Option<Rc<dyn Material>>,
     pub t: f32,
     pub front_face: bool,
 }
 
-impl<'a> HitRecord<'a>{
+impl HitRecord{
     pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) -> (){
         self.front_face = Vec3::dot(r.dir, outward_normal) < 0.0;
         self.normal = if self.front_face { outward_normal } else { -outward_normal };

@@ -5,16 +5,17 @@ use crate::hittable::{
     HitRecord,
 };
 use crate::material::Material;
-
 use crate::ray::Ray;
 
-pub struct Sphere<'a>{
+use std::rc::Rc;
+
+pub struct Sphere{
     pub center: Vec3,
     pub radius: f32,
-    pub material: &'a Material,
+    pub material: Option<Rc<dyn Material>>,
 }
 
-impl<'a> Hittable for Sphere<'a> {
+impl Hittable for Sphere {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>{
         let oc = r.orig - self.center;
         let a = r.dir.length_squared();
@@ -26,7 +27,7 @@ impl<'a> Hittable for Sphere<'a> {
             return None;
         }
         let sqrtd = discriminant.sqrt();
-
+        
         // nearest root that lies within tolerance
         let root = (-half_b - sqrtd) / a;
         if root < t_min || root > t_max {
@@ -35,11 +36,10 @@ impl<'a> Hittable for Sphere<'a> {
                 return None;
             }
         }
-        
         let mut record = HitRecord{
             p: r.at(root),
             normal: (r.at(root) - self.center) / self.radius,
-            material: Some(self.material),
+            material: self.material.clone(),
             t: root,
             front_face: false,
         };

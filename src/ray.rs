@@ -1,12 +1,7 @@
 
 use crate::vec3::Vec3;
-use crate::hittable::{
-    Hittable,
-    HitRecord,
-};
 
-#[derive(Copy)]
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Ray{
     pub orig: Vec3,
     pub dir: Vec3,

@@ -84,17 +84,18 @@ fn main() {
 
     // render
     let mut small_rng = SmallRng::from_entropy();
-    let distrib = Uniform::new(0.0, 1.0);
+    let distrib_zero_one = Uniform::new(0.0, 1.0);
+    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
 	println!("P3\n{} {}\n255", image.0, image.1);
     for y in (0..image.1).rev() {
         eprintln!("Scanlines remaining: {}", y);
         for x in 0..image.0 {
             let mut color = Vec3::zero();
             for _ in 0..samples_per_pixel {
-                let u = ((x as f32) + small_rng.sample(distrib)) / ((image.0 - 1) as f32);
-                let v = ((y as f32) + small_rng.sample(distrib)) / ((image.1 - 1) as f32);
+                let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
+                let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
                 let ray = cam.get_ray(u, v);
-                color+= ray_color(ray, &world, max_depth, &mut small_rng, distrib);
+                color+= ray_color(ray, &world, max_depth, &mut small_rng, distrib_plusminus_one);
             }
             println!("{}", color.print_ppm(samples_per_pixel));
         }
@@ -119,7 +120,6 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
                 if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng, distrib) {
                     return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
                 };
-
             },
             None => return Vec3::zero(),
         }

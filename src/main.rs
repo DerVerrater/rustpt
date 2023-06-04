@@ -29,14 +29,14 @@ fn main() {
         (400.0 / aspect_ratio) as i32
     );
     let samples_per_pixel = 100;
-    let max_depth = 100;
+    let max_depth = 50;
     
     // world
 
     let mat_ground = Material::Lambertian{ albedo: Vec3::new(0.8, 0.8, 0.0) };
     let mat_center = Material::Lambertian{ albedo: Vec3::new(0.7, 0.3, 0.3) };
-    let mat_left   = Material::Metal{ albedo: Vec3::new(0.8, 0.8, 0.8) };
-    let mat_right  = Material::Metal{ albedo: Vec3::new(0.8, 0.6, 0.2) };
+    let mat_left   = Material::Metal{ albedo: Vec3::new(0.8, 0.8, 0.8), fuzz: 0.3 };
+    let mat_right  = Material::Metal{ albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 1.0 };
 
     let mut world = HittableList::new();
     world.add(
@@ -64,8 +64,7 @@ fn main() {
             Sphere{
                 center: Vec3::new(-1.0, 0.0, -1.0),
                 radius: 0.5,
-                material: Some(mat_left),
-            }
+                material: Some(mat_left), }
         )
     );
     
@@ -88,7 +87,7 @@ fn main() {
     let distrib = Uniform::new(0.0, 1.0);
 	println!("P3\n{} {}\n255", image.0, image.1);
     for y in (0..image.1).rev() {
-        eprintln!("Scanlines remaining: {}", image.1 - y);
+        eprintln!("Scanlines remaining: {}", y);
         for x in 0..image.0 {
             let mut color = Vec3::zero();
             for _ in 0..samples_per_pixel {

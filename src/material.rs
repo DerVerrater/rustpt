@@ -1,9 +1,9 @@
 
 use crate::ray::Ray;
 use crate::hittable::HitRecord;
-use crate::Vec3;
+use crate::vec3;
+use crate::vec3::Vec3;
 
-use rand::Rng;
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
@@ -49,7 +49,7 @@ impl Material {
             },
             Material::Metal { albedo, fuzz } => {
                 let reflected = Vec3::reflect(
-                    Vec3::as_unit(&ray_in.dir),
+                    Vec3::as_unit(ray_in.dir),
                     rec.normal
                 );
                 *scattered = Ray{
@@ -63,7 +63,7 @@ impl Material {
                 *attenuation = Vec3::ones();
                 let refraction_ratio = if rec.front_face { 1.0 / index_refraction } else { *index_refraction };
                 
-                let unit_direction = Vec3::as_unit(&ray_in.dir);
+                let unit_direction = Vec3::as_unit(ray_in.dir);
                 let refracted = Vec3::refract(unit_direction, rec.normal, refraction_ratio);
 
                 *scattered = Ray {

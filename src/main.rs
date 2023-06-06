@@ -125,26 +125,12 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
         }
     }
 
-    let unitdir = Vec3::as_unit(&r.dir);
+    let unitdir = Vec3::as_unit(r.dir);
     let t = 0.5 * (unitdir.y + 1.0);
     return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
 }
 
 fn degrees_to_radians(degrees: f32) -> f32 {
     degrees * std::f32::consts::PI / 180.0
-}
-
-fn hit_sphere(center: Vec3, radius: f32, ray: &Ray) -> f32{
-    let oc = ray.orig - center;
-    let a = ray.dir.length_squared();
-    let half_b = Vec3::dot(oc, ray.dir);
-    let c = oc.length_squared() - radius*radius;
-    let discriminant = half_b*half_b - a*c;
-
-    if discriminant < 0.0 {
-        return -1.0;
-    } else {
-        return (-half_b - discriminant.sqrt()) / a;
-    }
 }
 

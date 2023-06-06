@@ -17,11 +17,7 @@ use rand::Rng;
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
-#[derive(Copy)]
-#[derive(Clone)]
-#[derive(PartialEq)]
-#[derive(PartialOrd)]
-#[derive(Debug)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 pub struct Vec3{
 	pub x: f32,
 	pub y: f32,
@@ -66,7 +62,7 @@ impl Vec3{
     }
 
     pub fn rand_unit_vector(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec3 {
-        return Vec3::as_unit(&Vec3::rand_in_unit_sphere(srng, distrib));
+        return Vec3::as_unit(Vec3::rand_in_unit_sphere(srng, distrib));
     }
 
 	pub fn length(&self) -> f32 {
@@ -74,7 +70,7 @@ impl Vec3{
 	}
 
 	pub fn length_squared(&self) -> f32 {
-		(self.x*self.x) + (self.y*self.y) + (self.z*self.z)
+		(self.x * self.x) + (self.y * self.y) + (self.z * self.z)
 	}
     
     // roughly equivalent to the `void write_color(...)` in the book
@@ -126,9 +122,9 @@ impl Vec3{
         }
     }
     
-    pub fn as_unit(v: &Vec3) -> Vec3 {
+    pub fn as_unit(v: Vec3) -> Vec3 {
         let len = v.length();
-        *v / len
+        v / len
     }
 
 }
@@ -194,7 +190,6 @@ impl Mul<f32> for Vec3{
 			z: self.z * other,
 		}
 	}
-	
 }
 
 impl MulAssign<Vec3> for Vec3 {
@@ -232,9 +227,9 @@ impl Div<f32> for Vec3 {
 	type Output = Vec3;
 	fn div(self, other: f32) -> Vec3 {
 		Vec3 {
-			x: self.x / other,
-			y: self.y / other,
-			z: self.z / other,
+			x: 1.0/other * self.x,
+			y: 1.0/other * self.y,
+			z: 1.0/other * self.z,
 		}
 	}
 }
@@ -450,6 +445,20 @@ mod test{
     }
 
     #[test]
+    fn test_dot_acute(){
+        let v1 = Vec3::new(1.0, 1.0, 0.0);
+        let v2 = Vec3::new(0.5, 1.0, 0.0);
+        assert_eq!(Vec3::dot(v1, v2), 1.5);
+    }
+
+    #[test]
+    fn test_dot_obtuse(){
+        let v1 = Vec3::new(1.0, 1.0, 0.0);
+        let v2 = Vec3::new(0.5, -1.0, 0.0);
+        assert_eq!(Vec3::dot(v1, v2), -0.5);
+    }
+    
+    #[test]
     fn test_cross_perpendicular(){
         let v1 = Vec3::new(1.0, 0.0, 0.0);
         let v2 = Vec3::new(0.0, 1.0, 0.0);
@@ -483,7 +492,7 @@ mod test{
         let v = Vec3::new(2.0, 0.0, 0.0);
         let expected = Vec3::new(1.0, 0.0, 0.0);
         
-        assert_eq!(Vec3::as_unit(&v), expected);
+        assert_eq!(Vec3::as_unit(v), expected);
     }
 
     #[test]
@@ -491,7 +500,7 @@ mod test{
         let v = Vec3::new(0.5, 0.0, 0.0);
         let expected = Vec3::new(1.0, 0.0, 0.0);
         
-        assert_eq!(Vec3::as_unit(&v), expected);
+        assert_eq!(Vec3::as_unit(v), expected);
     }
 
     #[test]
@@ -499,8 +508,42 @@ mod test{
         let v = Vec3::new(1.0, 1.0, 1.0);
         let expected = Vec3::new(0.577350269,0.577350269,0.577350269);
 
-        assert!(Vec3::as_unit(&v) <= expected * 1.001); // within very small under-estimate
-        assert!(Vec3::as_unit(&v) >= expected * 0.999); // within very small over-estimate
+        assert!(Vec3::as_unit(v) <= expected * 1.001); // within very small under-estimate
+        assert!(Vec3::as_unit(v) >= expected * 0.999); // within very small over-estimate
+    }
+
+    #[test]
+    fn test_reflect_flat(){
+        let ray = Vec3::new(1.0, 0.0, 0.0);
+        let normal = Vec3::new(-1.0, 0.0, 0.0);
+
+        let refl = Vec3::reflect(ray, normal);
+        let expected = Vec3::new(-1.0, 0.0, 0.0);
+        assert!(refl == expected);
+    }
+    
+    #[test]
+    fn test_reflect_flat_back(){
+        let ray = Vec3::new(1.0, 0.0, 0.0);
+        let normal = Vec3::new(1.0, 0.0, 0.0);
+
+        let refl = Vec3::reflect(ray, normal);
+        let expected = Vec3::new(-1.0, 0.0, 0.0);
+        assert!(refl == expected);
+
+    }
+
+    #[test]
+    fn test_reflect_45(){
+        let ray = Vec3::new(1.0, 0.0, 0.0);
+        let normal = Vec3::as_unit(Vec3::new(-1.0, 1.0, 0.0));
+
+        
+        let refl = Vec3::reflect(ray, normal);
+        let expected = Vec3::new(0.0, 1.0, 0.0);
+        let diff = refl - expected;
+        eprintln!("Diff: {}", diff);
+        assert!(Vec3::near_zero(&diff));
     }
 }
 

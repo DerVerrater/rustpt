@@ -12,6 +12,7 @@
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
+use crate::degrees_to_radians;
 
 pub struct Camera {
     pub origin: Vec3,
@@ -21,10 +22,12 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new() -> Camera {
-        let aspect_ratio = 16.0 / 9.0;
-        let vp_height = 2.0;
+    pub fn new(vfov: f32, aspect_ratio: f32) -> Camera {
+        let theta = degrees_to_radians(vfov);
+        let h = (theta / 2.0).tan();
+        let vp_height = 2.0 * h;
         let vp_width = aspect_ratio * vp_height;
+
         let focal_length = 1.0;
 
         let horiz = Vec3::new(vp_width, 0.0, 0.0);

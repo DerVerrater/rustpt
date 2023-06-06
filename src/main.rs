@@ -33,63 +33,36 @@ fn main() {
     
     // world
 
-    let mat_ground = Material::Lambertian{ albedo: Vec3::new(0.8, 0.8, 0.0) };
-    let mat_center = Material::Lambertian{ albedo: Vec3::new(0.1, 0.2, 0.5) };
-    let mat_left   = Material::Dielectric { index_refraction: 1.5 };
-    let mat_right  = Material::Metal{ albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 0.0 };
+    let R = std::f32::consts::FRAC_PI_4.cos();
+
+    let mat_left   = Material::Lambertian { albedo: Vec3::new(0.0, 0.0, 1.0) };
+    let mat_right  = Material::Lambertian { albedo: Vec3::new(1.0, 0.0, 0.0) };
 
     let mut world = HittableList::new();
     world.add(
         Box::new(
-            Sphere{
-                center: Vec3{ x: 0.0, y: -100.5, z: -1.0 },
-                radius: 100.0,
-                material: Some(mat_ground),
+            Sphere {
+                center: Vec3::new( -R, 0.0, -1.0),
+                radius: R,
+                material: Some(mat_left),
             }
         )
     );
 
     world.add(
         Box::new(
-            Sphere{
-                center: Vec3{ x: 0.0, y: 0.0, z: -1.0},
-                radius: 0.5,
-                material: Some(mat_center),
-            }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere{
-                center: Vec3::new(-1.0, 0.0, -1.0),
-                radius: 0.5,
-                material: Some(mat_left), }
-        )
-    );
-    
-    world.add(
-        Box::new(
-            Sphere{
-                center: Vec3::new(-1.0, 0.0, -1.0),
-                radius: -0.4,
-                material: Some(mat_left), }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere{
-                center: Vec3::new( 1.0, 0.0, -1.0),
-                radius: 0.5,
+            Sphere {
+                center: Vec3::new( R, 0.0, -1.0),
+                radius: R,
                 material: Some(mat_right),
             }
         )
     );
 
+    
     // camera
 
-    let cam = Camera::new();
+    let cam = Camera::new(90.0, aspect_ratio);
 
     // render
     let mut small_rng = SmallRng::from_entropy();
@@ -139,7 +112,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
     return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
 }
 
-fn degrees_to_radians(degrees: f32) -> f32 {
+pub fn degrees_to_radians(degrees: f32) -> f32 {
     degrees * std::f32::consts::PI / 180.0
 }
 

@@ -87,22 +87,29 @@ impl Vec3{
         let g = (self.y * scale).sqrt();
         let b = (self.z * scale).sqrt();
         
-        let ir = (Vec3::clamp(r, 0.0, 0.999) * 256.0) as i32;
-        let ig = (Vec3::clamp(g, 0.0, 0.999) * 256.0) as i32;
-        let ib = (Vec3::clamp(b, 0.0, 0.999) * 256.0) as i32;
+        let ir = (clamp(r, 0.0, 0.999) * 256.0) as i32;
+        let ig = (clamp(g, 0.0, 0.999) * 256.0) as i32;
+        let ib = (clamp(b, 0.0, 0.999) * 256.0) as i32;
         format!("{} {} {}", ir, ig, ib)
     }
     
     pub fn near_zero(&self) -> bool {
-        let epsilon: f32 = 1e-8;
+        let epsilon: f32 = 1e-4;
         return 
-            self.x < epsilon &&
-            self.y < epsilon &&
-            self.z < epsilon
+            self.x.abs() < epsilon &&
+            self.y.abs() < epsilon &&
+            self.z.abs() < epsilon
     }
     
     pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
         return v - n * Vec3::dot(v, n) * 2.0;
+    }
+    
+    pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {
+        let cos_theta = min(Vec3::dot(-uv, n), 1.0);
+        let r_out_perp = (uv + n * cos_theta) * etai_over_etat;
+        let r_out_parallel = n * -(1.0 - r_out_perp.length_squared()).abs().sqrt();
+        r_out_perp + r_out_parallel
     }
 
     pub fn dot(left: Vec3, right: Vec3) -> f32{
@@ -124,15 +131,6 @@ impl Vec3{
         *v / len
     }
 
-    fn clamp(input: f32, min: f32, max: f32) -> f32 {
-        if input < min {
-            return min;
-        } else if input > max {
-            return max;
-        } else {
-            return input;
-        }
-    }
 }
 impl Add for Vec3 {
 	type Output = Vec3;
@@ -281,6 +279,17 @@ impl Display for Vec3 {
 	}
 }
 
+pub fn clamp(input: f32, lower: f32, upper: f32) -> f32 {
+    min(max(input, lower), upper)
+}
+
+pub fn min(a: f32, b: f32) -> f32 {
+    if a < b { a } else { b }
+}
+
+pub fn max(a: f32, b: f32) -> f32 {
+    if a > b { a } else { b }
+}
 
 #[cfg(test)]
 mod test{

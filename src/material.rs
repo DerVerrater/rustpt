@@ -11,8 +11,9 @@ use rand::distributions::Uniform;
 
 #[derive(Copy, Clone, Debug)]
 pub enum Material{
-    Lambertian{ albedo: Vec3 },
-    Metal{ albedo:Vec3, fuzz: f32 },
+    Lambertian { albedo: Vec3 },
+    Metal { albedo:Vec3, fuzz: f32 },
+    Dielectric { index_refraction: f32 },
 }
 
 impl Material {
@@ -57,6 +58,19 @@ impl Material {
                 };
                 *attenuation = *albedo;
                 return Vec3::dot(scattered.dir, rec.normal) > 0.0;
+            },
+            Material::Dielectric { index_refraction } => {
+                *attenuation = Vec3::ones();
+                let refraction_ratio = if rec.front_face { 1.0 / index_refraction } else { *index_refraction };
+                
+                let unit_direction = Vec3::as_unit(&ray_in.dir);
+                let refracted = Vec3::refract(unit_direction, rec.normal, refraction_ratio);
+
+                *scattered = Ray {
+                    orig: rec.p,
+                    dir: refracted
+                };
+                return true;
             },
         }
     }

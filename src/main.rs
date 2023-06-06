@@ -34,8 +34,8 @@ fn main() {
     // world
 
     let mat_ground = Material::Lambertian{ albedo: Vec3::new(0.8, 0.8, 0.0) };
-    let mat_center = Material::Lambertian{ albedo: Vec3::new(0.7, 0.3, 0.3) };
-    let mat_left   = Material::Metal{ albedo: Vec3::new(0.8, 0.8, 0.8), fuzz: 0.3 };
+    let mat_center = Material::Dielectric { index_refraction: 1.5 };
+    let mat_left   = Material::Dielectric { index_refraction: 1.5 };
     let mat_right  = Material::Metal{ albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 1.0 };
 
     let mut world = HittableList::new();

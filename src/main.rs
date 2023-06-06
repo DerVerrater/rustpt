@@ -32,18 +32,38 @@ fn main() {
     let max_depth = 50;
     
     // world
-
-    let R = std::f32::consts::FRAC_PI_4.cos();
-
-    let mat_left   = Material::Lambertian { albedo: Vec3::new(0.0, 0.0, 1.0) };
-    let mat_right  = Material::Lambertian { albedo: Vec3::new(1.0, 0.0, 0.0) };
+    
+    let mat_ground = Material::Lambertian { albedo: Vec3::new(0.8, 0.8, 0.0) };
+    let mat_center = Material::Lambertian { albedo: Vec3::new(0.1, 0.2, 0.5) };
+    let mat_left   = Material::Dielectric { index_refraction: 1.5 }; 
+    let mat_right  = Material::Metal { albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 0.0 };
 
     let mut world = HittableList::new();
     world.add(
         Box::new(
             Sphere {
-                center: Vec3::new( -R, 0.0, -1.0),
-                radius: R,
+                center: Vec3::new(0.0, -100.5, -1.0),
+                radius: 100.0,
+                material: Some(mat_ground),
+            }
+        )
+    );
+
+    world.add(
+        Box::new(
+            Sphere {
+                center: Vec3::new(0.0, 0.0, -1.0),
+                radius: 0.5,
+                material: Some(mat_center),
+            }
+        )
+    );
+
+    world.add(
+        Box::new(
+            Sphere {
+                center: Vec3::new(-1.0, 0.0, -1.0),
+                radius: 0.5,
                 material: Some(mat_left),
             }
         )
@@ -52,17 +72,33 @@ fn main() {
     world.add(
         Box::new(
             Sphere {
-                center: Vec3::new( R, 0.0, -1.0),
-                radius: R,
+                center: Vec3::new(-1.0, 0.0, -1.0),
+                radius: -0.45,
+                material: Some(mat_left),
+            }
+        )
+    );
+
+    world.add(
+        Box::new(
+            Sphere {
+                center: Vec3::new(1.0, 0.0, -1.0),
+                radius: 0.5,
                 material: Some(mat_right),
             }
         )
     );
 
-    
+
     // camera
 
-    let cam = Camera::new(90.0, aspect_ratio);
+    let cam = Camera::new(
+        Vec3::new(-2.0, 2.0, 1.0),
+        Vec3::new(0.0, 0.0, -1.0),
+        Vec3::new(0.0, 1.0, 0.0),
+        20.0,
+        aspect_ratio
+    );
 
     // render
     let mut small_rng = SmallRng::from_entropy();

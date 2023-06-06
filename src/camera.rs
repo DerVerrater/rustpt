@@ -22,31 +22,34 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(vfov: f32, aspect_ratio: f32) -> Camera {
+    pub fn new(lookfrom: Vec3, lookat: Vec3, vup: Vec3, vfov: f32, aspect_ratio: f32) -> Camera {
         let theta = degrees_to_radians(vfov);
         let h = (theta / 2.0).tan();
         let vp_height = 2.0 * h;
         let vp_width = aspect_ratio * vp_height;
 
-        let focal_length = 1.0;
+        let w = Vec3::as_unit(lookfrom - lookat);
+        let u = Vec3::as_unit(Vec3::cross(vup, w));
+        let v = Vec3::cross(w, u);
 
-        let horiz = Vec3::new(vp_width, 0.0, 0.0);
-        let verti = Vec3::new(0.0, vp_height, 0.0);
-        let orig = Vec3::zero();
+        let orig = lookfrom;
+        let horiz = u * vp_width;
+        let verti = v * vp_height;
+        let lower_left_corner = orig - horiz / 2.0 - verti / 2.0 - w;
 
         Camera{
             origin: orig,
-            lower_left_corner: orig - horiz/2.0 - verti/2.0 - Vec3::new(0.0, 0.0, focal_length),
+            lower_left_corner,
             horizontal: horiz,
             vertical: verti,
         }
     }
 
-    pub fn get_ray(&self, u: f32, v: f32) -> Ray {
-        let dir =   self.lower_left_corner
-                    + self.horizontal * u
-                    + self.vertical * v 
-                    - self.origin;
+    pub fn get_ray(&self, s: f32, t: f32) -> Ray {
+        let dir = self.lower_left_corner
+                + self.horizontal * s
+                + self.vertical * t 
+                - self.origin;
         Ray{
             orig: self.origin,
             dir,

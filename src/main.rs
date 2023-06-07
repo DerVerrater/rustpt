@@ -25,8 +25,8 @@ fn main() {
     // image
     let aspect_ratio = 16.0 / 9.0;
     let image = (
-        400,
-        (400.0 / aspect_ratio) as i32
+        1920,
+        (1920.0 / aspect_ratio) as i32
     );
     let samples_per_pixel = 100;
     let max_depth = 50;
@@ -92,12 +92,19 @@ fn main() {
 
     // camera
 
+    let lookfrom = Vec3::new(3.0, 3.0, 2.0);
+    let lookat = Vec3::new(0.0, 0.0, -1.0);
+    let vup = Vec3::new(0.0, 1.0, 0.0);
+    let dist_to_focus = (lookfrom - lookat).length();
+    let aperture = 2.0;
     let cam = Camera::new(
-        Vec3::new(-2.0, 2.0, 1.0),
-        Vec3::new(0.0, 0.0, -1.0),
-        Vec3::new(0.0, 1.0, 0.0),
+        lookfrom,
+        lookat,
+        vup,
         20.0,
-        aspect_ratio
+        aspect_ratio,
+        aperture,
+        dist_to_focus
     );
 
     // render
@@ -112,7 +119,7 @@ fn main() {
             for _ in 0..samples_per_pixel {
                 let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
                 let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
-                let ray = cam.get_ray(u, v);
+                let ray = cam.get_ray(u, v, &mut small_rng, distrib_plusminus_one);
                 color+= ray_color(ray, &world, max_depth, &mut small_rng, distrib_plusminus_one);
             }
             println!("{}", color.print_ppm(samples_per_pixel));

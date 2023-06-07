@@ -23,80 +23,29 @@ use rand::distributions::Uniform;
 
 fn main() {
     // image
-    let aspect_ratio = 16.0 / 9.0;
+    let aspect_ratio = 3.0 / 2.0;
     let image = (
         1920,
         (1920.0 / aspect_ratio) as i32
     );
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 10;
     let max_depth = 50;
-    
+
+    // random generator
+    let mut small_rng = SmallRng::seed_from_u64(0);
+    let distrib_zero_one = Uniform::new(0.0, 1.0);
+    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
+
     // world
-    
-    let mat_ground = Material::Lambertian { albedo: Vec3::new(0.8, 0.8, 0.0) };
-    let mat_center = Material::Lambertian { albedo: Vec3::new(0.1, 0.2, 0.5) };
-    let mat_left   = Material::Dielectric { index_refraction: 1.5 }; 
-    let mat_right  = Material::Metal { albedo: Vec3::new(0.8, 0.6, 0.2), fuzz: 0.0 };
-
-    let mut world = HittableList::new();
-    world.add(
-        Box::new(
-            Sphere {
-                center: Vec3::new(0.0, -100.5, -1.0),
-                radius: 100.0,
-                material: Some(mat_ground),
-            }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere {
-                center: Vec3::new(0.0, 0.0, -1.0),
-                radius: 0.5,
-                material: Some(mat_center),
-            }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere {
-                center: Vec3::new(-1.0, 0.0, -1.0),
-                radius: 0.5,
-                material: Some(mat_left),
-            }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere {
-                center: Vec3::new(-1.0, 0.0, -1.0),
-                radius: -0.45,
-                material: Some(mat_left),
-            }
-        )
-    );
-
-    world.add(
-        Box::new(
-            Sphere {
-                center: Vec3::new(1.0, 0.0, -1.0),
-                radius: 0.5,
-                material: Some(mat_right),
-            }
-        )
-    );
-
+    let world = random_scene(&mut small_rng);
 
     // camera
 
-    let lookfrom = Vec3::new(3.0, 3.0, 2.0);
-    let lookat = Vec3::new(0.0, 0.0, -1.0);
+    let lookfrom = Vec3::new(13.0, 2.0, 3.0);
+    let lookat = Vec3::zero();
     let vup = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = (lookfrom - lookat).length();
-    let aperture = 2.0;
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
     let cam = Camera::new(
         lookfrom,
         lookat,
@@ -108,9 +57,6 @@ fn main() {
     );
 
     // render
-    let mut small_rng = SmallRng::from_entropy();
-    let distrib_zero_one = Uniform::new(0.0, 1.0);
-    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
 	println!("P3\n{} {}\n255", image.0, image.1);
     for y in (0..image.1).rev() {
         eprintln!("Scanlines remaining: {}", y);
@@ -153,6 +99,85 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
     let unitdir = Vec3::as_unit(r.dir);
     let t = 0.5 * (unitdir.y + 1.0);
     return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
+}
+
+fn random_scene(srng: &mut SmallRng) -> HittableList {
+    let mat_ground = Material::Lambertian { albedo: Vec3::new(0.5, 0.5, 0.5) };
+    let mut world = HittableList::new();
+    
+    world.add( Box::new( Sphere::new(0.0, -1000.0, 0.0, 1000.0, Some(mat_ground) )));
+    
+    let distrib_zero_one = Uniform::new(0.0, 1.0);
+    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
+
+    for a in -11..11 {
+        for b in -11..11 {
+            let choose_mat = srng.sample(distrib_zero_one);
+            let center = Vec3 {
+                x: a as f32 + 0.9 * srng.sample(distrib_zero_one),
+                y: 0.2,
+                z: b as f32 + 0.9 * srng.sample(distrib_zero_one),
+            };
+            if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
+
+                if choose_mat < 0.8 {
+                    // diffuse
+                    let albedo = Vec3::rand(srng, distrib_zero_one) * Vec3::rand(srng, distrib_zero_one);
+                    let sphere_material = Material::Lambertian { albedo };
+                    world.add(
+                        Box::new(
+                            Sphere {
+                                center,
+                                radius: 0.2,
+                                material: Some(sphere_material),
+                            }
+                        )
+                    );
+                } else if choose_mat < 0.95 {
+                    // metal
+                    let distr_albedo = Uniform::new(0.5, 1.0);
+                    let distr_fuzz = Uniform::new(0.0, 0.5);
+
+                    let albedo = Vec3::rand(srng, distr_albedo);
+                    let fuzz = srng.sample(distr_fuzz);
+                    let material = Material::Metal { albedo, fuzz };
+                    world.add(
+                        Box::new(
+                            Sphere {
+                                center,
+                                radius: 0.2,
+                                material: Some(material),
+                            }
+                        )
+                    );
+                } else {
+                    // glass
+                    let material = Material::Dielectric { index_refraction: 1.5 };
+                    world.add(
+                        Box::new(
+                            Sphere{
+                                center,
+                                radius: 0.2,
+                                material: Some(material),
+                            }
+                        )
+                    );
+
+                };
+            }
+        }
+    }
+
+    let material1 = Material::Dielectric { index_refraction: 1.5 };
+    world.add(Box::new( Sphere::new(0.0, 1.0, 0.0, 1.0, Some(material1)) ));
+
+    let material2 = Material::Lambertian { albedo: Vec3::new(0.4, 0.2, 0.1) };
+    world.add(Box::new( Sphere::new(-4.0, 1.0, 0.0, 1.0, Some(material2)) ));
+
+    let material3 = Material::Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 };
+    world.add(Box::new( Sphere::new(4.0, 1.0, 0.0, 1.0, Some(material3)) ));
+
+    return world;
 }
 
 pub fn degrees_to_radians(degrees: f32) -> f32 {

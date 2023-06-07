@@ -13,6 +13,16 @@ pub struct Sphere{
     pub material: Option<Material>,
 }
 
+impl Sphere {
+    pub fn new(x: f32, y: f32, z: f32, r: f32, mat: Option<Material>) -> Sphere {
+        Sphere {
+            center: Vec3::new(x, y, z),
+            radius: r,
+            material: mat,
+        }
+    }
+}
+
 impl Hittable for Sphere {
     fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>{
         let oc = r.orig - self.center;

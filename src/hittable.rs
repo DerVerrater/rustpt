@@ -35,9 +35,9 @@ impl HittableList{
     pub fn add(&mut self, hittable: Box<dyn Hittable> ) -> () {
         self.hittables.push(hittable);
     }
-    pub fn clear(&mut self) -> () {
-        self.hittables.clear();
-    }
+//    pub fn clear(&mut self) -> () {
+//        self.hittables.clear();
+//    }
 }
 
 impl Hittable for HittableList{

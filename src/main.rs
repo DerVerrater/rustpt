@@ -65,7 +65,7 @@ fn main() {
             for _ in 0..samples_per_pixel {
                 let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
                 let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
-                let ray = cam.get_ray(u, v, &mut small_rng, distrib_plusminus_one);
+                let ray = cam.get_ray(u, v, &mut small_rng);
                 color+= ray_color(ray, &world, max_depth, &mut small_rng, distrib_plusminus_one);
             }
             println!("{}", color.print_ppm(samples_per_pixel));
@@ -88,7 +88,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
         let mut attenuation = Vec3::zero();
         match rec.material {
             Some(mat) => {
-                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng, distrib) {
+                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng) {
                     return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
                 };
             },
@@ -108,8 +108,6 @@ fn random_scene(srng: &mut SmallRng) -> HittableList {
     world.add( Box::new( Sphere::new(0.0, -1000.0, 0.0, 1000.0, Some(mat_ground) )));
     
     let distrib_zero_one = Uniform::new(0.0, 1.0);
-    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
-
     for a in -11..11 {
         for b in -11..11 {
             let choose_mat = srng.sample(distrib_zero_one);

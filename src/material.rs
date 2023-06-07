@@ -25,11 +25,10 @@ impl Material {
         attenuation: &mut Vec3,
         scattered: &mut Ray,
         srng: &mut SmallRng,
-        distrib: Uniform<f32>,
     ) -> bool {
         match self {
             Material::Lambertian { albedo } => {
-                let scatter_dir = rec.normal + Vec3::rand_unit_vector(srng, distrib);
+                let scatter_dir = rec.normal + Vec3::rand_unit_vector(srng);
                 // The compiler might be smart enough to compute this ^^^ just once. In which case,
                 // I don't need to do this weird dance. Oh well. It'll work.
                 let scatter_dir = if scatter_dir.near_zero() {  // if near zero,
@@ -55,7 +54,7 @@ impl Material {
                 );
                 *scattered = Ray{
                     orig: rec.p,
-                    dir: reflected + Vec3::rand_in_unit_sphere(srng, distrib) * *fuzz,
+                    dir: reflected + Vec3::rand_in_unit_sphere(srng) * *fuzz,
                 };
                 *attenuation = *albedo;
                 return Vec3::dot(scattered.dir, rec.normal) > 0.0;
@@ -69,7 +68,8 @@ impl Material {
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
                 let cannot_refract = refraction_ratio * sin_theta > 1.0;
-                let direction = if cannot_refract || Material::reflectance(cos_theta, refraction_ratio) > srng.sample(distrib) {
+                let distrib_zero_one = Uniform::new(0.0, 1.0);
+                let direction = if cannot_refract || Material::reflectance(cos_theta, refraction_ratio) > srng.sample(distrib_zero_one) {
                     Vec3::reflect(unit_direction, rec.normal)
                 } else {
                     Vec3::refract(unit_direction, rec.normal, refraction_ratio)

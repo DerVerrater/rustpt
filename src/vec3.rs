@@ -53,7 +53,8 @@ impl Vec3{
         }
     }
 
-    pub fn rand_in_unit_sphere(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec3 {
+    pub fn rand_in_unit_sphere(srng: &mut SmallRng) -> Vec3 {
+        let distrib = Uniform::new(-1.0, 1.0);
         loop {
             let p = Vec3::rand(srng, distrib);
             if p.length_squared() >= 1.0 { continue; }
@@ -61,7 +62,8 @@ impl Vec3{
         }
     }
 
-    pub fn rand_in_unit_disk(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec3 {
+    pub fn rand_in_unit_disk(srng: &mut SmallRng) -> Vec3 {
+        let distrib = Uniform::new(-1.0, 1.0);
         loop {
             let p = Vec3 {
                 x: srng.sample(distrib),
@@ -73,8 +75,8 @@ impl Vec3{
         }
     }
 
-    pub fn rand_unit_vector(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec3 {
-        return Vec3::as_unit(Vec3::rand_in_unit_sphere(srng, distrib));
+    pub fn rand_unit_vector(srng: &mut SmallRng) -> Vec3 {
+        return Vec3::as_unit(Vec3::rand_in_unit_sphere(srng));
     }
 
 	pub fn length(&self) -> f32 {

@@ -33,8 +33,8 @@ fn main() {
 
     // random generator
     let mut small_rng = SmallRng::seed_from_u64(0);
-    let distrib_zero_one = Uniform::new(0.0, 1.0);
-    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
+
+
 
     // world
     let world = random_scene(&mut small_rng);
@@ -60,18 +60,29 @@ fn main() {
 	println!("P3\n{} {}\n255", image.0, image.1);
     for y in (0..image.1).rev() {
         eprintln!("Scanlines remaining: {}", y);
-        for x in 0..image.0 {
-            let mut color = Vec3::zero();
-            for _ in 0..samples_per_pixel {
-                let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
-                let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
-                let ray = cam.get_ray(u, v, &mut small_rng);
-                color+= ray_color(ray, &world, max_depth, &mut small_rng, distrib_plusminus_one);
-            }
+        let line = render_line(y, image, samples_per_pixel, &world, max_depth, &mut small_rng, &cam);
+        for color in line {
             println!("{}", color.print_ppm(samples_per_pixel));
         }
     }
     eprintln!("Done!");
+}
+
+fn render_line(y: i32, image: (i32, i32), samples_per_pixel: u32, world: &dyn Hittable, max_depth: u32, small_rng: &mut SmallRng, cam: &camera::Camera  ) -> Vec<Vec3> {
+    let distrib_zero_one = Uniform::new(0.0, 1.0);
+    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
+    let mut line = Vec::<Vec3>::new();
+    for x in 0..image.0 {
+        let mut color = Vec3::zero();
+        for _ in 0..samples_per_pixel {
+            let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
+            let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
+            let ray = cam.get_ray(u, v, small_rng);
+            color+= ray_color(ray, world, max_depth, small_rng, distrib_plusminus_one);
+        }
+        line.push(color);
+    }
+    return line;
 }
 
 fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {

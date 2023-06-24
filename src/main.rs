@@ -5,15 +5,11 @@ mod ray;
 mod camera;
 mod material;
 mod hittable;
-mod sphere;
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
-use crate::sphere::Sphere;
-use crate::hittable::{
-    Hittable,
-    HittableList,
-};
+use crate::hittable::Hittable;
+use crate::hittable::Hittable::{HittableList, Sphere};
 use crate::material::Material;
 
 use crate::camera::Camera;
@@ -68,7 +64,7 @@ fn main() {
     eprintln!("Done!");
 }
 
-fn render_line(y: i32, image: (i32, i32), samples_per_pixel: u32, world: &dyn Hittable, max_depth: u32, small_rng: &mut SmallRng, cam: &camera::Camera  ) -> Vec<Vec3> {
+fn render_line(y: i32, image: (i32, i32), samples_per_pixel: u32, world: &Hittable, max_depth: u32, small_rng: &mut SmallRng, cam: &camera::Camera  ) -> Vec<Vec3> {
     let distrib_zero_one = Uniform::new(0.0, 1.0);
     let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
     let mut line = Vec::<Vec3>::new();
@@ -85,7 +81,7 @@ fn render_line(y: i32, image: (i32, i32), samples_per_pixel: u32, world: &dyn Hi
     return line;
 }
 
-fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
+fn ray_color(r: Ray, world: &Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
     // recursion depth guard
     if depth == 0 {
         return Vec3::zero();
@@ -112,11 +108,11 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: u32, srng: &mut SmallRng, dist
     return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
 }
 
-fn random_scene(srng: &mut SmallRng) -> HittableList {
+fn random_scene(srng: &mut SmallRng) -> Hittable {
     let mat_ground = Material::Lambertian { albedo: Vec3::new(0.5, 0.5, 0.5) };
-    let mut world = HittableList::new();
+    let mut world = Hittable::HittableList { hittables : Vec::<Hittable>::new() };
     
-    world.add( Box::new( Sphere::new(0.0, -1000.0, 0.0, 1000.0, Some(mat_ground) )));
+    world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Some(mat_ground) });
     
     let distrib_zero_one = Uniform::new(0.0, 1.0);
     for a in -11..11 {
@@ -133,14 +129,12 @@ fn random_scene(srng: &mut SmallRng) -> HittableList {
                     // diffuse
                     let albedo = Vec3::rand(srng, distrib_zero_one) * Vec3::rand(srng, distrib_zero_one);
                     let sphere_material = Material::Lambertian { albedo };
-                    world.add(
-                        Box::new(
-                            Sphere {
-                                center,
-                                radius: 0.2,
-                                material: Some(sphere_material),
-                            }
-                        )
+                    world.push(
+                        Hittable::Sphere {
+                            center,
+                            radius: 0.2,
+                            material: Some(sphere_material),
+                        }
                     );
                 } else if choose_mat < 0.95 {
                     // metal
@@ -150,26 +144,22 @@ fn random_scene(srng: &mut SmallRng) -> HittableList {
                     let albedo = Vec3::rand(srng, distr_albedo);
                     let fuzz = srng.sample(distr_fuzz);
                     let material = Material::Metal { albedo, fuzz };
-                    world.add(
-                        Box::new(
-                            Sphere {
-                                center,
-                                radius: 0.2,
-                                material: Some(material),
-                            }
-                        )
+                    world.push(
+                        Hittable::Sphere {
+                            center,
+                            radius: 0.2,
+                            material: Some(material),
+                        }
                     );
                 } else {
                     // glass
                     let material = Material::Dielectric { index_refraction: 1.5 };
-                    world.add(
-                        Box::new(
-                            Sphere{
-                                center,
-                                radius: 0.2,
-                                material: Some(material),
-                            }
-                        )
+                    world.push(
+                        Hittable::Sphere{
+                            center,
+                            radius: 0.2,
+                            material: Some(material),
+                        }
                     );
 
                 };
@@ -178,13 +168,25 @@ fn random_scene(srng: &mut SmallRng) -> HittableList {
     }
 
     let material1 = Material::Dielectric { index_refraction: 1.5 };
-    world.add(Box::new( Sphere::new(0.0, 1.0, 0.0, 1.0, Some(material1)) ));
+    world.push( Hittable::Sphere{
+        center: Vec3::new(0.0, 1.0, 0.0),
+        radius: 1.0,
+        material: Some(material1)
+    });
 
     let material2 = Material::Lambertian { albedo: Vec3::new(0.4, 0.2, 0.1) };
-    world.add(Box::new( Sphere::new(-4.0, 1.0, 0.0, 1.0, Some(material2)) ));
+    world.push( Hittable::Sphere {
+        center: Vec3::new(-4.0, 1.0, 0.0),
+        radius: 1.0,
+        material: Some(material2)
+    });
 
     let material3 = Material::Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 };
-    world.add(Box::new( Sphere::new(4.0, 1.0, 0.0, 1.0, Some(material3)) ));
+    world.push( Hittable::Sphere {
+        center: Vec3::new(4.0, 1.0, 0.0),
+        radius: 1.0,
+        material: Some(material3)
+    });
 
     return world;
 }

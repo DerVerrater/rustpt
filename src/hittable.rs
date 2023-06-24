@@ -18,49 +18,72 @@ impl HitRecord{
     }
 }
 
-pub trait Hittable {
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>;
+pub enum Hittable {
+    Sphere { center: Vec3, radius: f32, material: Option<Material> },
+    HittableList { hittables: Vec<Hittable> }
 }
 
-pub struct HittableList{
-    hittables: Vec<Box<dyn Hittable>>,
-}
+impl Hittable {
+    pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
+        match self {
+            Hittable::HittableList { hittables } => {
+                let mut might_return = HitRecord {
+                    p: Vec3::zero(),
+                    normal: Vec3::zero(),
+                    material: None,
+                    t: t_max,
+                    front_face: false,
+                };
+                let mut hit_anything = false;
 
-impl HittableList{
-    pub fn new() -> HittableList {
-        HittableList { 
-            hittables: Vec::<Box<dyn Hittable>>::new()
-        }
-    }
-    pub fn add(&mut self, hittable: Box<dyn Hittable> ) -> () {
-        self.hittables.push(hittable);
-    }
-//    pub fn clear(&mut self) -> () {
-//        self.hittables.clear();
-//    }
-}
+                for item in hittables {
+                    if let Some(record) = item.hit(r, t_min, might_return.t){
+                        hit_anything = true;
+                        might_return = record;
+                    }
+                }
+                if hit_anything{
+                    return Some(might_return);
+                } else { return None; }
+            }
 
-impl Hittable for HittableList{
-    fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord>{
-        let mut might_return = HitRecord {
-            p: Vec3::zero(),
-            normal: Vec3::zero(),
-            material: None,
-            t: t_max,
-            front_face: false,
-        };
-        let mut hit_anything = false;
+            Hittable::Sphere { center, radius, material } => {
+                let oc = r.orig - *center;
+                let a = r.dir.length_squared();
+                let half_b = Vec3::dot(oc, r.dir);
+                let c = oc.length_squared() - radius * radius;
+                let discriminant = half_b*half_b - a*c;
 
-        for item in &self.hittables {
-            if let Some(record) = item.hit(r, t_min, might_return.t){
-                hit_anything = true;
-                might_return = record;
+                if discriminant < 0.0 {
+                    return None;
+                }
+                let sqrtd = discriminant.sqrt();
+
+                // nearest root that lies within tolerance
+                let mut root = (-half_b - sqrtd) / a;
+                if root < t_min || root > t_max {
+                    root = (-half_b + sqrtd) / a;
+                    if root < t_min || root > t_max {
+                        return None;
+                    }
+                }
+                let mut record = HitRecord{
+                    p: r.at(root),
+                    normal: (r.at(root) - *center) / *radius,
+                    material: *material,
+                    t: root,
+                    front_face: false,
+                };
+                let outward_normal = (record.p - *center) / *radius;
+                record.set_face_normal(r, outward_normal);
+                Some(record)
             }
         }
-        if hit_anything{
-            return Some(might_return);
-        } else { return None; }
+    }
+    pub fn push(&mut self, item: Hittable) {
+        if let Hittable::HittableList { hittables } = self {
+            hittables.push(item);
+        }
     }
 }
-
 

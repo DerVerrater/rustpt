@@ -3,19 +3,20 @@
 mod vec3;
 mod ray;
 mod camera;
-mod material;
-mod hittable;
+mod material; mod hittable;
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::hittable::Hittable;
-use crate::hittable::Hittable::{HittableList, Sphere};
 use crate::material::Material;
 
 use crate::camera::Camera;
 use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
+
+use std::thread;
+use std::sync::mpsc;
 
 fn main() {
     // image
@@ -29,8 +30,6 @@ fn main() {
 
     // random generator
     let mut small_rng = SmallRng::seed_from_u64(0);
-
-
 
     // world
     let world = random_scene(&mut small_rng);
@@ -51,30 +50,84 @@ fn main() {
         aperture,
         dist_to_focus
     );
+    
+    // thread messaging channels
+    // Render output pipe endpoints
+    let (render_tx, render_rx) = mpsc::sync_channel::<(i32, Vec<Vec3>)>(1); // TODO: Figure out good names for the ends of the output pipe
+    let (job_tx, job_rx) = mpsc::channel::<RenderCommand>();
+
+    // Threads exist for the whole duration of the (main function) program.
+    let thread_handle = thread::spawn(move || {
+        let mut srng = small_rng.clone();
+        while let Ok(job) = job_rx.recv() {
+            match job {
+                RenderCommand::Stop => {
+                    break;
+                }
+                RenderCommand::Line { line_num, context } => {
+                    let line = render_line(line_num, &mut srng, context);
+                    let result = (line_num, line);
+                    render_tx.send(result).unwrap();
+                }
+            }
+        }
+    });
 
     // render
+    // The render loop should now be a job submission mechanism
+    // Iterate lines, submitting them as tasks to the thread.
 	println!("P3\n{} {}\n255", image.0, image.1);
+    let context = RenderContext {
+        camera: cam,
+        image,
+        max_depth,
+        samples_per_pixel,
+        world,
+    };
     for y in (0..image.1).rev() {
-        eprintln!("Scanlines remaining: {}", y);
-        let line = render_line(y, image, samples_per_pixel, &world, max_depth, &mut small_rng, &cam);
-        for color in line {
+        eprintln!("Submitting scanline: {}", y);
+        let job = RenderCommand::Line { line_num: y, context: context.clone() };
+        job_tx.send(job).unwrap();
+    }
+    job_tx.send(RenderCommand::Stop).unwrap();
+
+    while let Ok(line) = render_rx.recv() {
+        //TODO: sort results once multiple threads are introduced.
+        let (linenum, colors) = line;
+        eprintln!("Received scanline: {}", linenum);
+        for color in colors {
             println!("{}", color.print_ppm(samples_per_pixel));
         }
     }
+    thread_handle.join().unwrap();
     eprintln!("Done!");
 }
 
-fn render_line(y: i32, image: (i32, i32), samples_per_pixel: u32, world: &Hittable, max_depth: u32, small_rng: &mut SmallRng, cam: &camera::Camera  ) -> Vec<Vec3> {
+#[derive (Clone)]
+struct RenderContext{
+    image: (i32, i32),
+    samples_per_pixel: u32,
+    max_depth: u32,
+    world: Hittable,
+    camera: Camera,
+}
+
+enum RenderCommand{
+    Stop,
+    Line { line_num: i32, context: RenderContext },
+}
+
+fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext  ) -> Vec<Vec3> {
     let distrib_zero_one = Uniform::new(0.0, 1.0);
     let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
     let mut line = Vec::<Vec3>::new();
-    for x in 0..image.0 {
+    for x in 0..context.image.0 {
         let mut color = Vec3::zero();
-        for _ in 0..samples_per_pixel {
-            let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((image.0 - 1) as f32);
-            let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((image.1 - 1) as f32);
-            let ray = cam.get_ray(u, v, small_rng);
-            color+= ray_color(ray, world, max_depth, small_rng, distrib_plusminus_one);
+        for _ in 0..context.samples_per_pixel {
+            let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((context.image.0 - 1) as f32);
+            let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((context.image.1 - 1) as f32);
+            let ray = context.camera.get_ray(u, v, small_rng);
+            color+= ray_color(ray, &context.world, context.max_depth, small_rng, distrib_plusminus_one);
         }
         line.push(color);
     }

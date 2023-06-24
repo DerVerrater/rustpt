@@ -16,6 +16,7 @@ use crate::degrees_to_radians;
 
 use rand::rngs::SmallRng;
 
+#[derive (Clone, Copy)]
 pub struct Camera {
     origin: Vec3,
     lower_left_corner: Vec3,

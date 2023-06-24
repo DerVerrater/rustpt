@@ -18,6 +18,7 @@ impl HitRecord{
     }
 }
 
+#[derive (Clone)]
 pub enum Hittable {
     Sphere { center: Vec3, radius: f32, material: Option<Material> },
     HittableList { hittables: Vec<Hittable> }

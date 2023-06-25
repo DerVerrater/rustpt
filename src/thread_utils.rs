@@ -42,7 +42,7 @@ impl Dispatcher {
 
         for _ in 0..4 {
             // create new command tx/rx pairs. Store tx in the list, give rx to the thread.
-            let (command_tx, command_rx) = mpsc::sync_channel::<RenderCommand>(100);
+            let (command_tx, command_rx) = mpsc::sync_channel::<RenderCommand>(1);
             // TODO: Pick appropriate command queue depth (or make it controllable, even)
 
 

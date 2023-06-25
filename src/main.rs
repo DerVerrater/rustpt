@@ -18,6 +18,8 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
+use std::thread;
+
 fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
@@ -62,29 +64,37 @@ fn main() {
         samples_per_pixel,
         world,
     };
-    let mut dispatcher = thread_utils::Dispatcher::new(&small_rng);
 
-    for y in (0..image.1).rev() {
-        eprintln!("Submitting scanline: {}", y);
-        let job = RenderCommand::Line { line_num: y, context: context.clone() };
-        dispatcher.submit_job(job);
-    }
-    //TODO: Dispatcher shutdown mechanism
-    // Just gonna take advantage of the round-robin dispatching to
-    // get a stop command to each thread
-    dispatcher.submit_job(RenderCommand::Stop);
-    dispatcher.submit_job(RenderCommand::Stop);
-    dispatcher.submit_job(RenderCommand::Stop);
-    dispatcher.submit_job(RenderCommand::Stop);
-    // ... also I happen to know there are 4 threads.
+    thread::scope(|s| {
+        let mut dispatcher = thread_utils::Dispatcher::new(&small_rng);
+        let scanline_receiver = dispatcher.render_rx;
 
-    while let Ok(scanline) = dispatcher.render_rx.recv() {
-        //TODO: sort results once multiple threads are introduced.
-        eprintln!("Received scanline: {}", scanline.line_num);
-        for color in scanline.line {
-            println!("{}", color.print_ppm(samples_per_pixel));
+        s.spawn(move || {
+            for y in (0..image.1).rev() {
+                eprintln!("Submitting scanline: {}", y);
+                let job = RenderCommand::Line { line_num: y, context: context.clone() };
+                dispatcher.submit_job(job);
+            }
+            //TODO: Dispatcher shutdown mechanism
+            // Just gonna take advantage of the round-robin dispatching to
+            // get a stop command to each thread
+            dispatcher.submit_job(RenderCommand::Stop);
+            dispatcher.submit_job(RenderCommand::Stop);
+            dispatcher.submit_job(RenderCommand::Stop);
+            dispatcher.submit_job(RenderCommand::Stop);
+            // ... also I happen to know there are 4 threads.
+        });
+        eprintln!("Reached the scanline collector");
+        while let Ok(scanline) = scanline_receiver.recv() {
+            //TODO: sort results once multiple threads are introduced.
+            eprintln!("Received scanline: {}", scanline.line_num);
+            for color in scanline.line {
+                println!("{}", color.print_ppm(samples_per_pixel));
+            }
         }
-    }
+    });
+    
+    
     // TODO: Dispatcher shutdown mechanism. Right now, we might technically be leaking threads.
     eprintln!("Done!");
 }

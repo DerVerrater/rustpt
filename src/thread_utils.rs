@@ -94,7 +94,8 @@ impl Dispatcher {
         match self.command_transmitters.get(self.next_to_feed){
             Some(target) => target.send(command),
             None => panic!("oh god oh fuck"),
-        };
+        }
+        self.next_to_feed += 1;
     }
 }
 

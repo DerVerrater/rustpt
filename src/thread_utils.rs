@@ -42,7 +42,7 @@ impl Dispatcher {
 
         for _ in 0..4 {
             // create new command tx/rx pairs. Store tx in the list, give rx to the thread.
-            let (command_tx, command_rx) = mpsc::sync_channel::<RenderCommand>(1);
+            let (command_tx, command_rx) = mpsc::sync_channel::<RenderCommand>(100);
             // TODO: Pick appropriate command queue depth (or make it controllable, even)
 
 
@@ -92,7 +92,7 @@ impl Dispatcher {
         }
         
         match self.command_transmitters.get(self.next_to_feed){
-            Some(target) => target.send(command),
+            Some(target) => target.send(command).unwrap(),
             None => panic!("oh god oh fuck"),
         }
         self.next_to_feed += 1;

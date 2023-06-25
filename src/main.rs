@@ -3,20 +3,20 @@
 mod vec3;
 mod ray;
 mod camera;
-mod material; mod hittable;
+mod material;
+mod hittable;
+mod thread_utils;
 
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::hittable::Hittable;
 use crate::material::Material;
-
 use crate::camera::Camera;
+use crate::thread_utils::RenderCommand;
+
 use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
-
-use std::thread;
-use std::sync::mpsc;
 
 fn main() {
     // image
@@ -50,28 +50,6 @@ fn main() {
         aperture,
         dist_to_focus
     );
-    
-    // thread messaging channels
-    // Render output pipe endpoints
-    let (render_tx, render_rx) = mpsc::sync_channel::<(i32, Vec<Vec3>)>(1); // TODO: Figure out good names for the ends of the output pipe
-    let (job_tx, job_rx) = mpsc::channel::<RenderCommand>();
-
-    // Threads exist for the whole duration of the (main function) program.
-    let thread_handle = thread::spawn(move || {
-        let mut srng = small_rng.clone();
-        while let Ok(job) = job_rx.recv() {
-            match job {
-                RenderCommand::Stop => {
-                    break;
-                }
-                RenderCommand::Line { line_num, context } => {
-                    let line = render_line(line_num, &mut srng, context);
-                    let result = (line_num, line);
-                    render_tx.send(result).unwrap();
-                }
-            }
-        }
-    });
 
     // render
     // The render loop should now be a job submission mechanism
@@ -84,37 +62,40 @@ fn main() {
         samples_per_pixel,
         world,
     };
+    let mut dispatcher = thread_utils::Dispatcher::new(&small_rng);
+
     for y in (0..image.1).rev() {
         eprintln!("Submitting scanline: {}", y);
         let job = RenderCommand::Line { line_num: y, context: context.clone() };
-        job_tx.send(job).unwrap();
+        dispatcher.submit_job(job);
     }
-    job_tx.send(RenderCommand::Stop).unwrap();
+    //TODO: Dispatcher shutdown mechanism
+    // Just gonna take advantage of the round-robin dispatching to
+    // get a stop command to each thread
+    dispatcher.submit_job(RenderCommand::Stop);
+    dispatcher.submit_job(RenderCommand::Stop);
+    dispatcher.submit_job(RenderCommand::Stop);
+    dispatcher.submit_job(RenderCommand::Stop);
+    // ... also I happen to know there are 4 threads.
 
-    while let Ok(line) = render_rx.recv() {
+    while let Ok(scanline) = dispatcher.render_rx.recv() {
         //TODO: sort results once multiple threads are introduced.
-        let (linenum, colors) = line;
-        eprintln!("Received scanline: {}", linenum);
-        for color in colors {
+        eprintln!("Received scanline: {}", scanline.line_num);
+        for color in scanline.line {
             println!("{}", color.print_ppm(samples_per_pixel));
         }
     }
-    thread_handle.join().unwrap();
+    // TODO: Dispatcher shutdown mechanism. Right now, we might technically be leaking threads.
     eprintln!("Done!");
 }
 
 #[derive (Clone)]
-struct RenderContext{
+pub struct RenderContext{
     image: (i32, i32),
     samples_per_pixel: u32,
     max_depth: u32,
     world: Hittable,
     camera: Camera,
-}
-
-enum RenderCommand{
-    Stop,
-    Line { line_num: i32, context: RenderContext },
 }
 
 fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext  ) -> Vec<Vec3> {

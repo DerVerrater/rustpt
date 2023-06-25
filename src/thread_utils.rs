@@ -3,6 +3,7 @@ use crate::RenderContext;
 use crate::Vec3;
 use crate::render_line;
 
+use core::cmp::Ordering;
 use std::thread;
 use std::sync::mpsc;
 use rand::rngs::SmallRng;
@@ -16,6 +17,32 @@ pub struct RenderResult {
     pub line_num: i32,
     pub line: Vec<Vec3>,
 }
+
+impl Ord for RenderResult {
+    fn cmp(&self, other: &Self) -> Ordering {
+        if self.line_num > other.line_num {
+            Ordering::Less
+        } else if self.line_num < other.line_num {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
+        }
+    }
+}
+
+impl PartialOrd for RenderResult {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl PartialEq for RenderResult {
+    fn eq(&self, other: &Self) -> bool {
+        self.line_num == other.line_num
+    }
+}
+
+impl Eq for RenderResult {}
 
 /*
  *  The dispatcher will hold a list of threads, and a list of command input channels to match.

@@ -66,21 +66,16 @@ fn main() {
     };
 
     thread::scope(|s| {
-        let (mut dispatcher, scanline_receiver) = thread_utils::Dispatcher::new(&small_rng);
+        let (mut dispatcher, scanline_receiver) = thread_utils::Dispatcher::new(&small_rng, 4);
 
         s.spawn(move || {
             for y in (0..image.1).rev() {
                 eprintln!("Submitting scanline: {}", y);
                 let job = RenderCommand::Line { line_num: y, context: context.clone() };
-                dispatcher.submit_job(job);
+                dispatcher.submit_job(job).unwrap();
             }
-            //TODO: Dispatcher shutdown mechanism
-            // Just gonna take advantage of the round-robin dispatching to
-            // get a stop command to each thread
-            dispatcher.submit_job(RenderCommand::Stop);
-            dispatcher.submit_job(RenderCommand::Stop);
-            dispatcher.submit_job(RenderCommand::Stop);
-            dispatcher.submit_job(RenderCommand::Stop);
+
+            dispatcher.submit_job(RenderCommand::Stop).unwrap();
             // ... also I happen to know there are 4 threads.
         });
 

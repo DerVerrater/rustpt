@@ -66,8 +66,7 @@ fn main() {
     };
 
     thread::scope(|s| {
-        let mut dispatcher = thread_utils::Dispatcher::new(&small_rng);
-        let scanline_receiver = dispatcher.render_rx;
+        let (mut dispatcher, mut scanline_receiver) = thread_utils::Dispatcher::new(&small_rng);
 
         s.spawn(move || {
             for y in (0..image.1).rev() {

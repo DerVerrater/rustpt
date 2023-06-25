@@ -30,11 +30,10 @@ pub struct Dispatcher{
     handles: Vec<thread::JoinHandle<()>>,
     command_transmitters: Vec<mpsc::SyncSender<RenderCommand>>, 
     next_to_feed: usize, // gonna do a round-robin style dispatch, ig.
-    pub render_rx: mpsc::Receiver<RenderResult>,
 }
 
 impl Dispatcher {
-    pub fn new(srng: &SmallRng) -> Dispatcher {
+    pub fn new(srng: &SmallRng) -> (Dispatcher, mpsc::Receiver<RenderResult> ) {
         let mut handles = Vec::new();
         let mut command_transmitters = Vec::<mpsc::SyncSender<RenderCommand>>::new();
 
@@ -67,13 +66,14 @@ impl Dispatcher {
             command_transmitters.push(command_tx);
         }
         // finally, stash everything in the Dispatcher struct and return.
-
-        Dispatcher{
-            handles,
-            command_transmitters,
-            next_to_feed: 0,
-            render_rx,
-        }
+        (
+            Dispatcher{
+                handles,
+                command_transmitters,
+                next_to_feed: 0,
+            },
+            render_rx
+        )
     }
 
     //TODO: Reconsider round-robin dispatch

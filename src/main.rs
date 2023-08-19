@@ -18,6 +18,10 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
+use itertools;
+use itertools::Itertools;
+use std::ops;
+
 use std::thread;
 
 fn main() {
@@ -165,16 +169,86 @@ fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext, distr: 
     //TODO: Ensure that the compiler hoists the distribution's out as constants
     // else, do so manually
    (0..context.image.0).map(|x| {
-        (0..context.samples_per_pixel).into_iter().fold(
-            Vec3::zero(),
-            |color, _sample| {
-                let u = ((x as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.0 - 1) as f32);
-                let v = ((y as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.1 - 1) as f32);
-                let ray = context.camera.get_ray(u, v, small_rng);
-                color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
-            }
-        )
+       sample_pixel(x, y, small_rng, &context, distr)
     }).collect()
+}
+
+fn sample_pixel(x: i32, y: i32, small_rng: &mut SmallRng, context: &RenderContext, distr: &DistributionContianer) -> Vec3{
+    (0..context.samples_per_pixel).into_iter().fold(
+        Vec3::zero(),
+        |color, _sample| {
+            let u = ((x as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.0 - 1) as f32);
+            let v = ((y as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.1 - 1) as f32);
+            let ray = context.camera.get_ray(u, v, small_rng);
+            color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
+        }
+    )
+}
+
+fn range2d(bounds: (i32, i32, i32, i32)) -> impl Iterator<Item = (i32, i32)> {
+    let rheight = bounds.1..(bounds.1+bounds.3);
+    rheight.flat_map(move |y| {
+        let rwidth = bounds.0..(bounds.0+bounds.2);
+        rwidth.map( move |x| {
+            (x, y)
+        })
+    })
+}
+
+#[derive (Copy, Clone)]
+struct Rect {
+    x: i32,
+    y: i32,
+    w: i32,
+    h: i32,
+}
+
+/* Iterable that produces pixels left-to-right, top-to-bottom.
+ * `Tile`s represent the render space, not the finished image.
+ * There is no internal pixel buffer
+ */
+
+type TileCursorIter = itertools::Product<ops::Range<i32>, ops::Range<i32>>;
+
+struct Tile {
+    bounds: Rect,
+    context: RenderContext,
+    small_rng: SmallRng,
+    rand_distr: DistributionContianer,
+    cursor: TileCursorIter,
+}
+
+impl Tile{
+    fn new(
+        bounds: Rect,
+        context: RenderContext,
+        small_rng: SmallRng,
+        rand_distr: DistributionContianer
+    ) -> Self
+    {
+        Tile { bounds, context, small_rng, rand_distr,
+            cursor: (bounds.x..(bounds.x + bounds.w))
+                .cartesian_product(bounds.y..(bounds.y + bounds.h)
+            )
+        }
+
+    }
+}
+
+impl Iterator for Tile {
+    type Item = Vec3;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((x, y)) = self.cursor.next(){
+            Some(sample_pixel(
+                x, y,
+                &mut self.small_rng,
+                &self.context,
+                &self.rand_distr,
+            ))
+        } else {
+            None
+        }
+    }
 }
 
 fn ray_color(r: Ray, world: &Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {

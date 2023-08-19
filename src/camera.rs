@@ -1,15 +1,4 @@
 
-/*
- *  let viewport = (aspect_ratio * 2.0, 2.0);
-    let focal_length = 1.0;
-
-    let origin = Vec3::new(0.0, 0.0, 0.0);
-    let horizontal = Vec3::new(viewport.0, 0.0, 0.0);
-    let vertical = Vec3::new(0.0, viewport.1, 0.0);
-
-    let lower_left_corner = origin - horizontal/2.0 - vertical/2.0 - Vec3::new(0.0, 0.0, focal_length);
- */
-
 use crate::vec3::Vec3;
 use crate::ray::Ray;
 use crate::degrees_to_radians;

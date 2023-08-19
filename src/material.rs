@@ -8,8 +8,6 @@ use rand::Rng;
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
-
-
 #[derive(Copy, Clone, Debug)]
 pub enum Material{
     Lambertian { albedo: Vec3 },

@@ -1,5 +1,4 @@
 
-
 mod vec3;
 mod ray;
 mod camera;
@@ -18,10 +17,9 @@ use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
-use itertools;
 use itertools::Itertools;
-use std::ops;
 
+use std::ops;
 use std::thread;
 
 fn main() {
@@ -42,19 +40,14 @@ fn main() {
 
     // camera
 
-    let lookfrom = Vec3::new(13.0, 2.0, 3.0);
-    let lookat = Vec3::zero();
-    let vup = Vec3::new(0.0, 1.0, 0.0);
-    let dist_to_focus = 10.0;
-    let aperture = 0.1;
     let cam = Camera::new(
-        lookfrom,
-        lookat,
-        vup,
+        Vec3::new(13.0, 2.0, 3.0), // lookfrom
+        Vec3::zero(), // lookat
+        Vec3::new(0.0, 1.0, 0.0), // vup
         20.0,
-        aspect_ratio,
-        aperture,
-        dist_to_focus
+        aspect_ratio, 
+        0.1, // aperture
+        10.0, // dist_to_focus
     );
 
     // render
@@ -183,16 +176,6 @@ fn sample_pixel(x: i32, y: i32, small_rng: &mut SmallRng, context: &RenderContex
             color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
         }
     )
-}
-
-fn range2d(bounds: (i32, i32, i32, i32)) -> impl Iterator<Item = (i32, i32)> {
-    let rheight = bounds.1..(bounds.1+bounds.3);
-    rheight.flat_map(move |y| {
-        let rwidth = bounds.0..(bounds.0+bounds.2);
-        rwidth.map( move |x| {
-            (x, y)
-        })
-    })
 }
 
 #[derive (Copy, Clone)]

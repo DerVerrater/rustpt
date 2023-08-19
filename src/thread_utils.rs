@@ -1,7 +1,7 @@
 
 use crate::RenderContext;
 use crate::Vec3;
-use crate::render_line;
+use crate::{render_line, DistributionContianer};
 
 use core::cmp::Ordering;
 use std::thread;
@@ -76,7 +76,7 @@ impl Dispatcher {
 
             let mut srng = srng.clone();
             let threads_result_tx = render_tx.clone();
-
+            let distribs = DistributionContianer::new();
             let thread_handle = thread::spawn(move || {
                 while let Ok(job) = command_rx.recv() {
                     match job {
@@ -84,7 +84,7 @@ impl Dispatcher {
                             break;
                         }
                         RenderCommand::Line { line_num, context } => {
-                            let line = render_line(line_num, &mut srng, context);
+                            let line = render_line(line_num, &mut srng, context, &distribs);
                             let result = RenderResult { line_num, line };
                             threads_result_tx.send(result).unwrap();
                         }

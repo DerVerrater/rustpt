@@ -24,8 +24,8 @@ fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
     let image = (
-        400,
-        (400.0 / aspect_ratio) as i32
+        1920,
+        (1920.0 / aspect_ratio) as i32
     );
     let samples_per_pixel: u32 = 10;
     let max_depth = 50;
@@ -66,7 +66,7 @@ fn main() {
     };
 
     thread::scope(|s| {
-        let (mut dispatcher, scanline_receiver) = thread_utils::Dispatcher::new(&small_rng, 4);
+        let (mut dispatcher, scanline_receiver) = thread_utils::Dispatcher::new(&small_rng, 12);
 
         s.spawn(move || {
             for y in (0..image.1).rev() {
@@ -114,7 +114,7 @@ fn main() {
                                                          // short-circuit noted above, it could.
 
                 let last_ind = raster_segments.len() - 1;
-                if raster_segments[last_ind].line_num == sl_output_index{
+               if raster_segments[last_ind].line_num == sl_output_index{
                     let scanline = raster_segments.pop().unwrap();
                     print_scanline(scanline, samples_per_pixel);
                     sl_output_index -= 1;
@@ -147,19 +147,31 @@ pub struct RenderContext{
     camera: Camera,
 }
 
-fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext) -> Vec<Vec3> {
+pub struct DistributionContianer {
+    distrib_zero_one: Uniform<f32>,
+    distrib_plusminus_one: Uniform<f32>,
+}
+
+impl DistributionContianer {
+    fn new() -> Self {
+        DistributionContianer {
+            distrib_zero_one: Uniform::new(0.0, 1.0),
+            distrib_plusminus_one: Uniform::new(-1.0, 1.0),
+        }
+    }
+}
+
+fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext, distr: &DistributionContianer) -> Vec<Vec3> {
     //TODO: Ensure that the compiler hoists the distribution's out as constants
     // else, do so manually
-    let distrib_zero_one = Uniform::new(0.0, 1.0);
-    let distrib_plusminus_one = Uniform::new(-1.0, 1.0);
-    (0..context.image.0).map(|x| {
+   (0..context.image.0).map(|x| {
         (0..context.samples_per_pixel).into_iter().fold(
             Vec3::zero(),
             |color, _sample| {
-                let u = ((x as f32) + small_rng.sample(distrib_zero_one)) / ((context.image.0 - 1) as f32);
-                let v = ((y as f32) + small_rng.sample(distrib_zero_one)) / ((context.image.1 - 1) as f32);
+                let u = ((x as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.0 - 1) as f32);
+                let v = ((y as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.1 - 1) as f32);
                 let ray = context.camera.get_ray(u, v, small_rng);
-                color + ray_color(ray, &context.world, context.max_depth, small_rng, distrib_plusminus_one)
+                color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
             }
         )
     }).collect()

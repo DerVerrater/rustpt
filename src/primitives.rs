@@ -288,6 +288,26 @@ impl Display for Vec3 {
 	}
 }
 
+#[derive(Copy, Clone)]
+pub struct Ray{
+    pub orig: Vec3,
+    pub dir: Vec3,
+}
+
+impl Ray{
+    pub fn at(&self, t: f32) -> Vec3 {
+        self.orig + self.dir*t
+    }
+}
+
+#[derive (Copy, Clone)]
+pub struct Rect {
+    pub x: i32,
+    pub y: i32,
+    pub w: i32,
+    pub h: i32,
+}
+
 #[cfg(test)]
 mod test{
     use super::*;
@@ -547,23 +567,6 @@ mod test{
         eprintln!("Diff: {}", diff);
         assert!(Vec3::near_zero(&diff));
     }
-}
-
-#[derive(Copy, Clone)]
-pub struct Ray{
-    pub orig: Vec3,
-    pub dir: Vec3,
-}
-
-impl Ray{
-    pub fn at(&self, t: f32) -> Vec3 {
-        self.orig + self.dir*t
-    }
-}
-
-#[cfg(test)]
-mod test{
-    use super::*;
 
     #[test]
     fn check_lerp(){

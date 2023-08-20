@@ -5,7 +5,7 @@ mod material;
 mod hittable;
 mod thread_utils;
 
-use crate::primitives::{Vec3, Ray};
+use crate::primitives::{Vec3, Ray, Rect};
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::camera::Camera;
@@ -174,14 +174,6 @@ fn sample_pixel(x: i32, y: i32, small_rng: &mut SmallRng, context: &RenderContex
             color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
         }
     )
-}
-
-#[derive (Copy, Clone)]
-struct Rect {
-    x: i32,
-    y: i32,
-    w: i32,
-    h: i32,
 }
 
 /* Iterable that produces pixels left-to-right, top-to-bottom.

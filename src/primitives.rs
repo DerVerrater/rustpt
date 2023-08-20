@@ -97,9 +97,9 @@ impl Vec3{
         let g = (self.y * scale).sqrt();
         let b = (self.z * scale).sqrt();
         
-        let ir = (clamp(r, 0.0, 0.999) * 256.0) as i32;
-        let ig = (clamp(g, 0.0, 0.999) * 256.0) as i32;
-        let ib = (clamp(b, 0.0, 0.999) * 256.0) as i32;
+        let ir = (r.clamp( 0.0, 0.999) * 256.0) as i32;
+        let ig = (g.clamp( 0.0, 0.999) * 256.0) as i32;
+        let ib = (b.clamp( 0.0, 0.999) * 256.0) as i32;
         format!("{} {} {}", ir, ig, ib)
     }
     
@@ -116,7 +116,7 @@ impl Vec3{
     }
     
     pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {
-        let cos_theta = min(Vec3::dot(-uv, n), 1.0);
+        let cos_theta = Vec3::dot(-uv, n).min(1.0);
         let r_out_perp = (uv + n * cos_theta) * etai_over_etat;
         let r_out_parallel = n * -(1.0 - r_out_perp.length_squared()).abs().sqrt();
         r_out_perp + r_out_parallel
@@ -286,18 +286,6 @@ impl Display for Vec3 {
 		Ok(())
 		
 	}
-}
-
-pub fn clamp(input: f32, lower: f32, upper: f32) -> f32 {
-    min(max(input, lower), upper)
-}
-
-pub fn min(a: f32, b: f32) -> f32 {
-    if a < b { a } else { b }
-}
-
-pub fn max(a: f32, b: f32) -> f32 {
-    if a > b { a } else { b }
 }
 
 #[cfg(test)]
@@ -561,3 +549,32 @@ mod test{
     }
 }
 
+#[derive(Copy, Clone)]
+pub struct Ray{
+    pub orig: Vec3,
+    pub dir: Vec3,
+}
+
+impl Ray{
+    pub fn at(&self, t: f32) -> Vec3 {
+        self.orig + self.dir*t
+    }
+}
+
+#[cfg(test)]
+mod test{
+    use super::*;
+
+    #[test]
+    fn check_lerp(){
+        let ray = Ray{
+            orig: Vec3::new(0.0, 0.0, 0.0),
+            dir: Vec3::new(1.0, 1.0, 0.0)
+        };
+        let half = ray.at(0.5);
+        assert_eq!(
+            half,
+            Vec3::new(0.5, 0.5, 0.0)
+        );
+    }
+}

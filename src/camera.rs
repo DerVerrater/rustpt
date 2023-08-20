@@ -1,6 +1,5 @@
 
-use crate::vec3::Vec3;
-use crate::ray::Ray;
+use crate::primitives::{Vec3, Ray};
 use crate::degrees_to_radians;
 
 use rand::rngs::SmallRng;

@@ -1,8 +1,6 @@
 
-use crate::ray::Ray;
+use crate::primitives::{Vec3, Ray};
 use crate::hittable::HitRecord;
-use crate::vec3;
-use crate::vec3::Vec3;
 
 use rand::Rng;
 use rand::rngs::SmallRng;
@@ -62,7 +60,7 @@ impl Material {
                 let refraction_ratio = if rec.front_face { 1.0 / index_refraction } else { *index_refraction };
                 
                 let unit_direction = Vec3::as_unit(ray_in.dir);
-                let cos_theta = vec3::min(Vec3::dot(-unit_direction, rec.normal), 1.0);
+                let cos_theta = Vec3::dot(-unit_direction, rec.normal).min(1.0);
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
                 let cannot_refract = refraction_ratio * sin_theta > 1.0;

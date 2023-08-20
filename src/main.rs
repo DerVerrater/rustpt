@@ -1,13 +1,11 @@
 
-mod vec3;
-mod ray;
+mod primitives;
 mod camera;
 mod material;
 mod hittable;
 mod thread_utils;
 
-use crate::vec3::Vec3;
-use crate::ray::Ray;
+use crate::primitives::{Vec3, Ray};
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::camera::Camera;

@@ -3,21 +3,18 @@ mod primitives;
 mod camera;
 mod material;
 mod hittable;
-mod thread_utils;
+mod renderer;
 
-use crate::primitives::{Vec3, Ray, Rect};
+use crate::primitives::Vec3;
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::camera::Camera;
-use crate::thread_utils::RenderCommand;
+use crate::renderer::RenderCommand;
 
 use rand::{Rng, SeedableRng};
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
-use itertools::Itertools;
-
-use std::ops;
 use std::thread;
 
 fn main() {
@@ -52,7 +49,7 @@ fn main() {
     // The render loop should now be a job submission mechanism
     // Iterate lines, submitting them as tasks to the thread.
 	println!("P3\n{} {}\n255", image.0, image.1);
-    let context = RenderContext {
+    let context = renderer::RenderContext {
         camera: cam,
         image,
         max_depth,
@@ -61,7 +58,7 @@ fn main() {
     };
 
     thread::scope(|s| {
-        let (mut dispatcher, scanline_receiver) = thread_utils::Dispatcher::new(&small_rng, 12);
+        let (mut dispatcher, scanline_receiver) = renderer::Dispatcher::new(&small_rng, 12);
 
         s.spawn(move || {
             for y in (0..image.1).rev() {
@@ -94,7 +91,7 @@ fn main() {
          * received item *is* the next-to-write and skip the buffering step.
          * But I need to make the concept work at all, first.
          */
-        let mut raster_segments = Vec::<thread_utils::RenderResult>::new();
+        let mut raster_segments = Vec::<renderer::RenderResult>::new();
         let mut sl_output_index = image.1-1; // scanlines count down, start at image height.
         while let Ok(scanline) = scanline_receiver.recv() {
             eprintln!("Received scanline: {}", scanline.line_num);
@@ -126,129 +123,11 @@ fn main() {
     eprintln!("Done!");
 }
 
-fn print_scanline(scanline: thread_utils::RenderResult, samples_per_pixel: u32){
+fn print_scanline(scanline: renderer::RenderResult, samples_per_pixel: u32){
     eprintln!("Printing scanline num: {}", scanline.line_num);
     for color in &scanline.line {
         println!("{}", color.print_ppm(samples_per_pixel));
     }
-}
-
-#[derive (Clone)]
-pub struct RenderContext{
-    image: (i32, i32),
-    samples_per_pixel: u32,
-    max_depth: u32,
-    world: Hittable,
-    camera: Camera,
-}
-
-pub struct DistributionContianer {
-    distrib_zero_one: Uniform<f32>,
-    distrib_plusminus_one: Uniform<f32>,
-}
-
-impl DistributionContianer {
-    fn new() -> Self {
-        DistributionContianer {
-            distrib_zero_one: Uniform::new(0.0, 1.0),
-            distrib_plusminus_one: Uniform::new(-1.0, 1.0),
-        }
-    }
-}
-
-fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext, distr: &DistributionContianer) -> Vec<Vec3> {
-    //TODO: Ensure that the compiler hoists the distribution's out as constants
-    // else, do so manually
-   (0..context.image.0).map(|x| {
-       sample_pixel(x, y, small_rng, &context, distr)
-    }).collect()
-}
-
-fn sample_pixel(x: i32, y: i32, small_rng: &mut SmallRng, context: &RenderContext, distr: &DistributionContianer) -> Vec3{
-    (0..context.samples_per_pixel).into_iter().fold(
-        Vec3::zero(),
-        |color, _sample| {
-            let u = ((x as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.0 - 1) as f32);
-            let v = ((y as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.1 - 1) as f32);
-            let ray = context.camera.get_ray(u, v, small_rng);
-            color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
-        }
-    )
-}
-
-/* Iterable that produces pixels left-to-right, top-to-bottom.
- * `Tile`s represent the render space, not the finished image.
- * There is no internal pixel buffer
- */
-
-type TileCursorIter = itertools::Product<ops::Range<i32>, ops::Range<i32>>;
-
-struct Tile {
-    bounds: Rect,
-    context: RenderContext,
-    small_rng: SmallRng,
-    rand_distr: DistributionContianer,
-    cursor: TileCursorIter,
-}
-
-impl Tile{
-    fn new(
-        bounds: Rect,
-        context: RenderContext,
-        small_rng: SmallRng,
-        rand_distr: DistributionContianer
-    ) -> Self
-    {
-        Tile { bounds, context, small_rng, rand_distr,
-            cursor: (bounds.x..(bounds.x + bounds.w))
-                .cartesian_product(bounds.y..(bounds.y + bounds.h)
-            )
-        }
-
-    }
-}
-
-impl Iterator for Tile {
-    type Item = Vec3;
-    fn next(&mut self) -> Option<Self::Item> {
-        if let Some((x, y)) = self.cursor.next(){
-            Some(sample_pixel(
-                x, y,
-                &mut self.small_rng,
-                &self.context,
-                &self.rand_distr,
-            ))
-        } else {
-            None
-        }
-    }
-}
-
-fn ray_color(r: Ray, world: &Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
-    // recursion depth guard
-    if depth == 0 {
-        return Vec3::zero();
-    }
-
-    if let Some(rec) = world.hit(r, 0.001, f32::INFINITY){
-        let mut scattered = Ray {
-            orig: Vec3::zero(),
-            dir: Vec3::zero()
-        };
-        let mut attenuation = Vec3::zero();
-        match rec.material {
-            Some(mat) => {
-                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng) {
-                    return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
-                };
-            },
-            None => return Vec3::zero(),
-        }
-    }
-
-    let unitdir = Vec3::as_unit(r.dir);
-    let t = 0.5 * (unitdir.y + 1.0);
-    return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
 }
 
 fn random_scene(srng: &mut SmallRng) -> Hittable {

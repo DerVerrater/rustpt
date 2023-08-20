@@ -1,12 +1,147 @@
 
-use crate::RenderContext;
-use crate::Vec3;
-use crate::{render_line, DistributionContianer};
+use crate::primitives::{Vec3, Ray, Rect};
+use crate::camera::Camera;
+use crate::hittable::Hittable;
 
 use core::cmp::Ordering;
 use std::thread;
 use std::sync::mpsc;
+use std::ops;
+use rand::Rng;
 use rand::rngs::SmallRng;
+use rand::distributions::Uniform;
+use itertools::Itertools;
+
+// =================
+// Description parts
+// =================
+
+#[derive (Clone)]
+pub struct RenderContext{
+    pub image: (i32, i32),
+    pub samples_per_pixel: u32,
+    pub max_depth: u32,
+    pub world: Hittable,
+    pub camera: Camera,
+}
+
+pub struct DistributionContianer {
+    pub distrib_zero_one: Uniform<f32>,
+    pub distrib_plusminus_one: Uniform<f32>,
+}
+
+impl DistributionContianer {
+    fn new() -> Self {
+        DistributionContianer {
+            distrib_zero_one: Uniform::new(0.0, 1.0),
+            distrib_plusminus_one: Uniform::new(-1.0, 1.0),
+        }
+    }
+}
+
+// =============
+// Drawing Parts
+// =============
+
+fn render_line(y: i32, small_rng: &mut SmallRng, context: RenderContext, distr: &DistributionContianer) -> Vec<Vec3> {
+    //TODO: Ensure that the compiler hoists the distribution's out as constants
+    // else, do so manually
+   (0..context.image.0).map(|x| {
+       sample_pixel(x, y, small_rng, &context, distr)
+    }).collect()
+}
+
+fn ray_color(r: Ray, world: &Hittable, depth: u32, srng: &mut SmallRng, distrib: Uniform<f32> ) -> Vec3 {
+    // recursion depth guard
+    if depth == 0 {
+        return Vec3::zero();
+    }
+
+    if let Some(rec) = world.hit(r, 0.001, f32::INFINITY){
+        let mut scattered = Ray {
+            orig: Vec3::zero(),
+            dir: Vec3::zero()
+        };
+        let mut attenuation = Vec3::zero();
+        match rec.material {
+            Some(mat) => {
+                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng) {
+                    return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
+                };
+            },
+            None => return Vec3::zero(),
+        }
+    }
+
+    let unitdir = Vec3::as_unit(r.dir);
+    let t = 0.5 * (unitdir.y + 1.0);
+    return Vec3::ones() * (1.0 - t) + Vec3::new(0.5, 0.7, 1.0) * t
+}
+
+fn sample_pixel(x: i32, y: i32, small_rng: &mut SmallRng, context: &RenderContext, distr: &DistributionContianer) -> Vec3{
+    (0..context.samples_per_pixel).into_iter().fold(
+        Vec3::zero(),
+        |color, _sample| {
+            let u = ((x as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.0 - 1) as f32);
+            let v = ((y as f32) + small_rng.sample(distr.distrib_zero_one)) / ((context.image.1 - 1) as f32);
+            let ray = context.camera.get_ray(u, v, small_rng);
+            color + ray_color(ray, &context.world, context.max_depth, small_rng, distr.distrib_plusminus_one)
+        }
+    )
+}
+
+// ===============
+// Execution parts
+// ===============
+
+/* Iterable that produces pixels left-to-right, top-to-bottom.
+ * `Tile`s represent the render space, not the finished image.
+ * There is no internal pixel buffer
+ */
+
+type TileCursorIter = itertools::Product<ops::Range<i32>, ops::Range<i32>>;
+
+struct Tile {
+    bounds: Rect,
+    context: RenderContext,
+    small_rng: SmallRng,
+    rand_distr: DistributionContianer,
+    cursor: TileCursorIter,
+}
+
+impl Tile{
+    fn new(
+        bounds: Rect,
+        context: RenderContext,
+        small_rng: SmallRng,
+        rand_distr: DistributionContianer
+    ) -> Self
+    {
+        Tile { bounds, context, small_rng, rand_distr,
+            cursor: (bounds.x..(bounds.x + bounds.w))
+                .cartesian_product(bounds.y..(bounds.y + bounds.h)
+            )
+        }
+
+    }
+}
+
+impl Iterator for Tile {
+    type Item = Vec3;
+    fn next(&mut self) -> Option<Self::Item> {
+        if let Some((x, y)) = self.cursor.next(){
+            Some(sample_pixel(
+                x, y,
+                &mut self.small_rng,
+                &self.context,
+                &self.rand_distr,
+            ))
+        } else {
+            None
+        }
+    }
+}
+
 
 
 #[derive (Clone)]

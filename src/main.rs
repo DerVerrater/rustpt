@@ -1,14 +1,14 @@
 
 mod primitives;
-mod camera;
-mod material;
-mod hittable;
 mod renderer;
+mod scene;
 
 use crate::primitives::Vec3;
-use crate::hittable::Hittable;
-use crate::material::Material;
-use crate::camera::Camera;
+use crate::scene::{
+    Camera, 
+    Hittable,
+    Material,
+};
 use crate::renderer::RenderCommand;
 
 use rand::{Rng, SeedableRng};
@@ -213,7 +213,4 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
     return world;
 }
 
-pub fn degrees_to_radians(degrees: f32) -> f32 {
-    degrees * std::f32::consts::PI / 180.0
-}
 

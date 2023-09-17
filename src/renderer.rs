@@ -1,7 +1,9 @@
 
 use crate::primitives::{Vec3, Ray, Rect};
-use crate::camera::Camera;
-use crate::hittable::Hittable;
+use crate::scene::{
+    Camera,
+    Hittable,
+};
 
 use core::cmp::Ordering;
 use std::thread;

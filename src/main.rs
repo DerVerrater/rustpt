@@ -4,7 +4,10 @@ mod renderer;
 mod scene;
 
 use crate::primitives::Vec3;
-use crate::scene::Camera;
+use crate::scene::{
+    Camera,
+    Scene
+};
 use crate::renderer::RenderCommand;
 
 use rand::SeedableRng;
@@ -24,21 +27,20 @@ fn main() {
     // random generator
     let mut small_rng = SmallRng::seed_from_u64(0);
 
-    // world
-    let world = scene::random_scene(&mut small_rng);
-
-    // camera
-
-    let cam = Camera::new(
-        Vec3::new(13.0, 2.0, 3.0), // lookfrom
-        Vec3::zero(), // lookat
-        Vec3::new(0.0, 1.0, 0.0), // vup
-        20.0,
-        aspect_ratio, 
-        0.1, // aperture
-        10.0, // dist_to_focus
-    );
-
+    // Scene (now includes camera)
+    let scene = Scene {
+        camera: Camera::new(
+            Vec3::new(13.0, 2.0, 3.0), // lookfrom
+            Vec3::zero(), // lookat
+            Vec3::new(0.0, 1.0, 0.0), // vup
+            20.0,
+            aspect_ratio, 
+            0.1, // aperture
+            10.0, // dist_to_focus
+        ),
+        world: Scene::random_world(&mut small_rng)
+    };
+    
     // render
     // The render loop should now be a job submission mechanism
     // Iterate lines, submitting them as tasks to the thread.

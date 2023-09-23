@@ -34,9 +34,9 @@ impl Hittable {
                 let mut hit_anything = false;
 
                 for item in hittables {
-                    if let Some(record) = item.hit(r, t_min, t_max){
+                    might_return = item.hit(r, t_min, t_max);
+                    if might_return.is_some() {
                         hit_anything = true;
-                        might_return = Some(record);
                     }
                 }
                 if hit_anything{

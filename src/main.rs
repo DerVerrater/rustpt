@@ -134,7 +134,7 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
     let mat_ground = Material::Lambertian { albedo: Vec3::new(0.5, 0.5, 0.5) };
     let mut world = Hittable::HittableList { hittables : Vec::<Hittable>::new() };
     
-    world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: Some(mat_ground) });
+    world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: mat_ground });
     
     let distrib_zero_one = Uniform::new(0.0, 1.0);
     for a in -11..11 {
@@ -155,7 +155,7 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
                         Hittable::Sphere {
                             center,
                             radius: 0.2,
-                            material: Some(sphere_material),
+                            material: sphere_material,
                         }
                     );
                 } else if choose_mat < 0.95 {
@@ -170,7 +170,7 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
                         Hittable::Sphere {
                             center,
                             radius: 0.2,
-                            material: Some(material),
+                            material: material,
                         }
                     );
                 } else {
@@ -180,7 +180,7 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
                         Hittable::Sphere{
                             center,
                             radius: 0.2,
-                            material: Some(material),
+                            material: material,
                         }
                     );
 
@@ -193,21 +193,21 @@ fn random_scene(srng: &mut SmallRng) -> Hittable {
     world.push( Hittable::Sphere{
         center: Vec3::new(0.0, 1.0, 0.0),
         radius: 1.0,
-        material: Some(material1)
+        material: material1
     });
 
     let material2 = Material::Lambertian { albedo: Vec3::new(0.4, 0.2, 0.1) };
     world.push( Hittable::Sphere {
         center: Vec3::new(-4.0, 1.0, 0.0),
         radius: 1.0,
-        material: Some(material2)
+        material: material2
     });
 
     let material3 = Material::Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 };
     world.push( Hittable::Sphere {
         center: Vec3::new(4.0, 1.0, 0.0),
         radius: 1.0,
-        material: Some(material3)
+        material: material3
     });
 
     return world;

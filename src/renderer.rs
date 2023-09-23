@@ -65,14 +65,9 @@ fn ray_color(r: Ray, world: &Hittable, depth: u32, srng: &mut SmallRng, distrib:
             dir: Vec3::zero()
         };
         let mut attenuation = Vec3::zero();
-        match rec.material {
-            Some(mat) => {
-                if mat.scatter(r, rec, &mut attenuation, &mut scattered, srng) {
-                    return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
-                };
-            },
-            None => return Vec3::zero(),
-        }
+        if rec.material.scatter(r, &rec, &mut attenuation, &mut scattered, srng) {
+            return attenuation * ray_color(scattered, world, depth-1, srng, distrib);
+        };
     }
 
     let unitdir = Vec3::as_unit(r.dir);

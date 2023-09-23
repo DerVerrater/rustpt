@@ -8,7 +8,7 @@ use rand::distributions::Uniform;
 pub struct HitRecord{
     pub p: Vec3,
     pub normal: Vec3,
-    pub material: Option<Material>,
+    pub material: Material,
     pub t: f32,
     pub front_face: bool,
 }
@@ -22,7 +22,7 @@ impl HitRecord{
 
 #[derive (Clone)]
 pub enum Hittable {
-    Sphere { center: Vec3, radius: f32, material: Option<Material> },
+    Sphere { center: Vec3, radius: f32, material: Material },
     HittableList { hittables: Vec<Hittable> }
 }
 
@@ -30,23 +30,17 @@ impl Hittable {
     pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             Hittable::HittableList { hittables } => {
-                let mut might_return = HitRecord {
-                    p: Vec3::zero(),
-                    normal: Vec3::zero(),
-                    material: None,
-                    t: t_max,
-                    front_face: false,
-                };
+                let mut might_return: Option<HitRecord> = None;
                 let mut hit_anything = false;
 
                 for item in hittables {
-                    if let Some(record) = item.hit(r, t_min, might_return.t){
+                    if let Some(record) = item.hit(r, t_min, t_max){
                         hit_anything = true;
-                        might_return = record;
+                        might_return = Some(record);
                     }
                 }
                 if hit_anything{
-                    return Some(might_return);
+                    return might_return;
                 } else { return None; }
             }
 
@@ -102,7 +96,7 @@ impl Material {
     pub fn scatter(
         &self,
         ray_in: Ray,
-        rec: HitRecord,
+        rec: &HitRecord,
         attenuation: &mut Vec3,
         scattered: &mut Ray,
         srng: &mut SmallRng,

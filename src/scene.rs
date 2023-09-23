@@ -32,10 +32,11 @@ impl Hittable {
             Hittable::HittableList { hittables } => {
                 let mut might_return: Option<HitRecord> = None;
                 let mut hit_anything = false;
-
+                let mut nearest_t = t_max;
                 for item in hittables {
-                    if let Some(record) = item.hit(r, t_min, t_max){
+                    if let Some(record) = item.hit(r, t_min, nearest_t){
                         hit_anything = true;
+                        nearest_t = record.t;
                         might_return = Some(record);
                     }
                 }

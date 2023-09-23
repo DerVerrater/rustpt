@@ -4,25 +4,19 @@ mod renderer;
 mod scene;
 
 use crate::primitives::Vec3;
-use crate::scene::{
-    Camera, 
-    Hittable,
-    Material,
-};
+use crate::scene::Camera;
 use crate::renderer::RenderCommand;
 
-use rand::{Rng, SeedableRng};
+use rand::SeedableRng;
 use rand::rngs::SmallRng;
-use rand::distributions::Uniform;
-
 use std::thread;
 
 fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
     let image = (
-        1920,
-        (1920.0 / aspect_ratio) as i32
+        400,
+        (400.0 / aspect_ratio) as i32
     );
     let samples_per_pixel: u32 = 10;
     let max_depth = 50;
@@ -31,7 +25,7 @@ fn main() {
     let mut small_rng = SmallRng::seed_from_u64(0);
 
     // world
-    let world = random_scene(&mut small_rng);
+    let world = scene::random_scene(&mut small_rng);
 
     // camera
 
@@ -129,88 +123,3 @@ fn print_scanline(scanline: renderer::RenderResult, samples_per_pixel: u32){
         println!("{}", color.print_ppm(samples_per_pixel));
     }
 }
-
-fn random_scene(srng: &mut SmallRng) -> Hittable {
-    let mat_ground = Material::Lambertian { albedo: Vec3::new(0.5, 0.5, 0.5) };
-    let mut world = Hittable::HittableList { hittables : Vec::<Hittable>::new() };
-    
-    world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: mat_ground });
-    
-    let distrib_zero_one = Uniform::new(0.0, 1.0);
-    for a in -11..11 {
-        for b in -11..11 {
-            let choose_mat = srng.sample(distrib_zero_one);
-            let center = Vec3 {
-                x: a as f32 + 0.9 * srng.sample(distrib_zero_one),
-                y: 0.2,
-                z: b as f32 + 0.9 * srng.sample(distrib_zero_one),
-            };
-            if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-
-                if choose_mat < 0.8 {
-                    // diffuse
-                    let albedo = Vec3::rand(srng, distrib_zero_one) * Vec3::rand(srng, distrib_zero_one);
-                    let sphere_material = Material::Lambertian { albedo };
-                    world.push(
-                        Hittable::Sphere {
-                            center,
-                            radius: 0.2,
-                            material: sphere_material,
-                        }
-                    );
-                } else if choose_mat < 0.95 {
-                    // metal
-                    let distr_albedo = Uniform::new(0.5, 1.0);
-                    let distr_fuzz = Uniform::new(0.0, 0.5);
-
-                    let albedo = Vec3::rand(srng, distr_albedo);
-                    let fuzz = srng.sample(distr_fuzz);
-                    let material = Material::Metal { albedo, fuzz };
-                    world.push(
-                        Hittable::Sphere {
-                            center,
-                            radius: 0.2,
-                            material: material,
-                        }
-                    );
-                } else {
-                    // glass
-                    let material = Material::Dielectric { index_refraction: 1.5 };
-                    world.push(
-                        Hittable::Sphere{
-                            center,
-                            radius: 0.2,
-                            material: material,
-                        }
-                    );
-
-                };
-            }
-        }
-    }
-
-    let material1 = Material::Dielectric { index_refraction: 1.5 };
-    world.push( Hittable::Sphere{
-        center: Vec3::new(0.0, 1.0, 0.0),
-        radius: 1.0,
-        material: material1
-    });
-
-    let material2 = Material::Lambertian { albedo: Vec3::new(0.4, 0.2, 0.1) };
-    world.push( Hittable::Sphere {
-        center: Vec3::new(-4.0, 1.0, 0.0),
-        radius: 1.0,
-        material: material2
-    });
-
-    let material3 = Material::Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 };
-    world.push( Hittable::Sphere {
-        center: Vec3::new(4.0, 1.0, 0.0),
-        radius: 1.0,
-        material: material3
-    });
-
-    return world;
-}
-
-

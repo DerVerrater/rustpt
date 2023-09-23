@@ -30,19 +30,15 @@ impl Hittable {
     pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             Hittable::HittableList { hittables } => {
-                let mut might_return: Option<HitRecord> = None;
-                let mut hit_anything = false;
-                let mut nearest_t = t_max;
-                for item in hittables {
-                    if let Some(record) = item.hit(r, t_min, nearest_t){
-                        hit_anything = true;
-                        nearest_t = record.t;
-                        might_return = Some(record);
-                    }
-                }
-                if hit_anything{
-                    return might_return;
-                } else { return None; }
+                hittables.iter()
+                .map( |obj| -> Option<HitRecord> {
+                    obj.hit(r, t_min, t_max)
+                }).filter(|obj| obj.is_some())
+                .min_by(|lhs, rhs| {
+                    let lhs = lhs.as_ref().unwrap();
+                    let rhs = rhs.as_ref().unwrap();
+                    lhs.t.partial_cmp(&rhs.t).expect("Couldn't compare??")
+                }).unwrap_or(None)
             }
 
             Hittable::Sphere { center, radius, material } => {

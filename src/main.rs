@@ -21,8 +21,8 @@ fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
     let image = (
-        1920,
-        (1920.0 / aspect_ratio) as i32
+        400,
+        (400.0 / aspect_ratio) as i32
     );
     let samples_per_pixel: u32 = 10;
     let max_depth = 50;

@@ -30,23 +30,17 @@ impl Hittable {
     pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
             Hittable::HittableList { hittables } => {
-                let mut might_return = HitRecord {
-                    p: Vec3::zero(),
-                    normal: Vec3::zero(),
-                    material: None,
-                    t: t_max,
-                    front_face: false,
-                };
+                let mut might_return:Option<HitRecord> = None;
                 let mut hit_anything = false;
 
                 for item in hittables {
-                    if let Some(record) = item.hit(r, t_min, might_return.t){
+                    if let Some(record) = item.hit(r, t_min, t_max){
                         hit_anything = true;
-                        might_return = record;
+                        might_return = Some(record);
                     }
                 }
                 if hit_anything{
-                    return Some(might_return);
+                    return might_return;
                 } else { return None; }
             }
 

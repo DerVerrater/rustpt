@@ -121,23 +121,18 @@ impl Tile {
         }
     }
     pub fn render_line(
-        bounds: Rect, y: i32, // bounding rect and line
+        y: i32, // bounding rect and line
         img_size: Vec2i,
         scene: &Scene,
         properties: &RenderProperties,
         rng: &mut SmallRng, // rng utils
     ) -> Self {
-        let pixels = (0..bounds.w)
-        .map ( |x| -> Vec3{
-            sample_pixel(
-                Vec2i{x, y},
-                scene,
-                properties,
-                img_size,
-                rng,
-            )
-        })
-        .collect();
-        Self { _bounds: bounds, pixels }
+        Tile::render_tile(
+            Rect{ x: 0, y, w: img_size.x, h: 1 },
+            img_size,
+            scene,
+            properties,
+            rng
+        )
     }
 }

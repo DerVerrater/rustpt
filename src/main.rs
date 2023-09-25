@@ -1,7 +1,7 @@
 
 mod primitives;
-mod renderer;
 mod scene;
+mod renderer;
 
 use crate::primitives::Vec3;
 use crate::scene::{
@@ -46,11 +46,11 @@ fn main() {
     // Iterate lines, submitting them as tasks to the thread.
 	println!("P3\n{} {}\n255", image.0, image.1);
     let context = renderer::RenderContext {
-        camera: cam,
+        camera: &scene.camera,
         image,
         max_depth,
         samples_per_pixel,
-        world,
+        world: scene.world,
     };
 
     thread::scope(|s| {

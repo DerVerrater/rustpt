@@ -17,6 +17,96 @@ use rand::Rng;
 use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
 
+pub type Vec2i = Vec2<i32>;
+pub type Vec2f = Vec2<f32>;
+
+#[derive (Clone, Copy, PartialEq, PartialOrd, Debug)]
+pub struct Vec2<T>{
+    pub x: T,
+    pub y: T,
+}
+
+
+impl Vec2<f32> {
+    pub fn zero() -> Vec2<f32> {
+        Vec2{ x: 0.0, y: 0.0 }
+    }
+
+    pub fn ones() -> Vec2<f32> {
+        Vec2{ x: 1.0, y: 1.0 }
+    }
+
+    pub fn rand(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec2<f32> {
+        Vec2 { x: srng.sample(distrib), y: srng.sample(distrib) }
+    }
+
+}
+
+impl <T> Vec2<T> 
+where T: std::ops::Mul{
+    pub fn new(x: T, y: T) -> Vec2<T> {
+        Vec2{x, y}
+    }
+}
+
+impl <T> Add for Vec2 <T>
+where T: std::ops::Add<Output = T>{
+    type Output = Vec2<T>;
+    fn add(self, other: Vec2<T>) -> Vec2<T> {
+        Vec2 { x: self.x + other.x, y: self.y + other.y }
+    }
+}
+
+impl <T> Mul for Vec2<T> 
+where T: std::ops::Mul<Output = T>{
+    type Output = Vec2<T>;
+    fn mul(self, other: Vec2<T>) -> Vec2<T> {
+        Vec2 {
+            x: self.x * other.x,
+            y: self.y * other.y
+        }
+    }
+}
+
+impl Div<f32> for Vec2<f32>{
+    type Output = Vec2<f32>;
+    fn div(self, other: f32) -> Vec2<f32> {
+        Vec2 {
+            x: 1.0/other * self.x,
+            y: 1.0/other * self.y
+        }
+    }
+}
+
+impl Div<i32> for Vec2<i32>{
+    type Output = Vec2<i32>;
+    fn div(self, other: i32) -> Vec2<i32> {
+        Vec2 {
+            x: self.x / other,
+            y: self.y / other
+        }
+    }
+}
+
+impl <T> Div<Vec2<T>> for Vec2<T> 
+where T: std::ops::Div<Output = T>{
+    type Output = Vec2<T>;
+    fn div(self, other: Vec2<T>) -> Vec2<T> {
+        Vec2 {
+            x: self.x / other.x,
+            y: self.y / other.y
+        }
+    }
+}
+
+impl <T> Display for Vec2<T> 
+where T: Display { // nested type still needs to have Display
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let str = format!("{} {}", self.x, self.y);
+        fmt.write_str(&str)
+    }
+}
+
 #[derive(Copy, Clone, PartialEq, PartialOrd, Debug)]
 pub struct Vec3{
 	pub x: f32,
@@ -306,6 +396,22 @@ pub struct Rect {
     pub y: i32,
     pub w: i32,
     pub h: i32,
+}
+
+impl Rect{
+    pub fn pos(&self) -> Vec2i {
+        Vec2i {
+            x: self.x,
+            y: self.y, 
+        }
+    }
+
+    pub fn size(&self) -> Vec2i {
+        Vec2i {
+            x: self.w - self.x,
+            y: self.h - self.y,
+        }
+    }
 }
 
 #[cfg(test)]

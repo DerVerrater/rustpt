@@ -13,6 +13,8 @@ use crate::scene::{
 
 use rand::rngs::SmallRng;
 
+use itertools::{self, Itertools};
+
 const SKY_COLOR: Vec3 = Vec3 { x: 0.5, y: 0.7, z: 1.0};
 
 pub struct RenderProperties {
@@ -93,6 +95,31 @@ pub struct Tile {
 }
 
 impl Tile {
+    pub fn render_tile(
+        bounds: Rect,       // bounds of the region to render
+        img_size: Vec2i,    // final image resolution (needed for proper UV mapping)
+        scene: &Scene,
+        properties: &RenderProperties, // TODO: Place image size in render properties?
+        rng: &mut SmallRng,
+    ) -> Self {
+        let pixel_iter = (bounds.y..(bounds.y + bounds.h))
+            .cartesian_product( bounds.x..(bounds.x + bounds.w));
+        let pixels = pixel_iter.map(
+            |coord| -> Vec3 {
+                sample_pixel(
+                    Vec2i{x: coord.1, y: coord.0},
+                    scene,
+                    properties,
+                    img_size,
+                    rng,
+                )
+            }
+        ).collect();
+        Self {
+            _bounds: bounds,
+            pixels
+        }
+    }
     pub fn render_line(
         bounds: Rect, y: i32, // bounding rect and line
         img_size: Vec2i,

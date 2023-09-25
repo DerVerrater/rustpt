@@ -56,19 +56,15 @@ fn main() {
     // The render loop should now be a job submission mechanism
     // Iterate lines, submitting them as tasks to the thread.
 	println!("P3\n{} {}\n255", image.x, image.y);
-    for row in (0..image.y).rev() {
-        let bounds = Rect{ // render boundary (a horizontal slice)
-            x: 0,
-            y: row,
-            w: image.x,
-            h: 1
-        };
-        let tile = Tile::render_line(bounds, row, image, &scene, &render_config, &mut small_rng);
-        eprintln!("Printing scanline #{}", row);
-        for pixel in tile.pixels {
-            println!("{}", pixel.print_ppm(render_config.samples))
-        }
+    let tile = Tile::render_tile(
+        Rect { x: 0, y: 0, w: image.x, h: image.y },
+        image,
+        &scene,
+        &render_config,
+        &mut small_rng
+    );
+    for pixel in tile.pixels.iter().rev() {
+        println!("{}", pixel.print_ppm(render_config.samples));
     }
-    // TODO: Dispatcher shutdown mechanism. Right now, we might technically be leaking threads.
     eprintln!("Done!");
 }

@@ -12,18 +12,12 @@ use crate::scene::{
 };
 
 use rand::rngs::SmallRng;
-use rand::distributions::Uniform;
 
 const SKY_COLOR: Vec3 = Vec3 { x: 0.5, y: 0.7, z: 1.0};
 
-struct Distrs{
-    zero_one: Uniform<f32>,
-    one_one: Uniform<f32>,
-}
-
-struct RenderProperties {
-    samples: u32, // samples are averaged results over a pixel
-    bounces: u32, // bounces are how far the ray will travel (in hits not total distance)
+pub struct RenderProperties {
+    pub samples: u32, // samples are averaged results over a pixel
+    pub bounces: u32, // bounces are how far the ray will travel (in hits not total distance)
 }
 
 fn to_uv(coord: Vec2i, img_size: Vec2i) -> Vec2f {
@@ -35,7 +29,6 @@ fn to_uv(coord: Vec2i, img_size: Vec2i) -> Vec2f {
 fn ray_color(
     r: Ray, surface: &Hittable, depth: u32,
     rng: &mut SmallRng,
-    distr: &Distrs,
 ) -> Vec3 {
     // recursion guard
     if depth == 0 {
@@ -57,7 +50,7 @@ fn ray_color(
             rng
         ) {
             return attenuation * ray_color(
-                scattered, surface, depth-1, rng, distr
+                scattered, surface, depth-1, rng
             );
         }
     } // TODO: explicit else block
@@ -79,7 +72,6 @@ fn sample_pixel(
     img_size: Vec2i,
     // Supplied by the execution environment (the thread)
     rng: &mut SmallRng,
-    dist: &Distrs,
 ) -> Vec3{
     (0..render_props.samples)
     .fold(
@@ -87,22 +79,26 @@ fn sample_pixel(
         |color, _sample| -> Vec3 {
             let uv = to_uv(coord, img_size);
             let ray = scene.camera.get_ray(uv.x, uv.y, rng);
-            color + ray_color(ray, &scene.world, render_props.bounces, rng, dist)
+            if ray.dir.x.is_nan() {
+                panic!("Ray dir.x is NAN");
+            }
+            color + ray_color(ray, &scene.world, render_props.bounces, rng)
         }
     )
 }
 
-struct Tile {
-    bounds: Rect,
-    pixels: Vec<Vec3>,
+pub struct Tile {
+    _bounds: Rect,
+    pub pixels: Vec<Vec3>,
 }
 
 impl Tile {
     pub fn render_line(
         bounds: Rect, y: i32, // bounding rect and line
+        img_size: Vec2i,
         scene: &Scene,
         properties: &RenderProperties,
-        rng: &mut SmallRng, distr: &Distrs // rng utils
+        rng: &mut SmallRng, // rng utils
     ) -> Self {
         let pixels = (0..bounds.w)
         .map ( |x| -> Vec3{
@@ -110,12 +106,11 @@ impl Tile {
                 Vec2i{x, y},
                 scene,
                 properties,
-                bounds.size(),
+                img_size,
                 rng,
-                distr
             )
         })
         .collect();
-        Self { bounds, pixels }
+        Self { _bounds: bounds, pixels }
     }
 }

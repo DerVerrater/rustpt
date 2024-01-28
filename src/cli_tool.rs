@@ -1,18 +1,14 @@
 
-mod primitives;
-mod scene;
-mod renderer;
-
-use crate::primitives::{
+use rustpt::primitives::{
     Vec2i,
     Vec3,
 };
-use crate::scene::{
+use rustpt::scene::{
     Camera,
     Scene
 };
 
-use crate::renderer::{
+use rustpt::renderer::{
     Tile,
     RenderProperties,
 };

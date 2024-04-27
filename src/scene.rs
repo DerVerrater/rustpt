@@ -179,15 +179,37 @@ pub struct Camera {
 }
 
 impl Camera {
-    pub fn new(
-        lookfrom: Vec3,
-        lookat: Vec3,
-        vup: Vec3,
-        vfov: f32,
-        aspect_ratio: f32,
-        aperture: f32,
-        focus_dist: f32
-    ) -> Camera {
+    pub fn new() -> Camera {
+        Self::default()
+    }
+
+    pub fn get_ray(&self, s: f32, t: f32, srng: &mut SmallRng) -> Ray {
+        let rd = Vec3::rand_in_unit_disk(srng) * self.lens_radius;
+        let offset = self.u * rd.x + self.v * rd.y;
+
+        let dir = self.lower_left_corner
+                + self.horizontal * s
+                + self.vertical * t 
+                - self.origin - offset;
+        Ray{
+            orig: self.origin + offset,
+            dir,
+        }
+    }
+}
+
+impl Default for Camera {
+    fn default() -> Self {
+        // defaults are the same as the hard-coded properties passed from main
+        // ... except for the `lookfrom` position: (13.0, 2.0, 3.0) became (10.0, 0..)
+        let lookfrom = Vec3::new(10.0, 0.0, 0.0);
+        let lookat = Vec3 { x: 1.0, y: 0.0, z: 0.0 };
+        let vup = Vec3::new(0.0, 1.0, 0.0);
+        let vfov = 20.0;
+        let aspect_ratio = 3.0 / 2.0;
+        let aperture = 0.1;
+        let focus_dist = 10.0;
+
         let theta = degrees_to_radians(vfov);
         let h = (theta / 2.0).tan();
         let vp_height = 2.0 * h;
@@ -209,20 +231,6 @@ impl Camera {
             vertical: verti,
             u, v, /* w,*/
             lens_radius: aperture / 2.0,
-        }
-    }
-
-    pub fn get_ray(&self, s: f32, t: f32, srng: &mut SmallRng) -> Ray {
-        let rd = Vec3::rand_in_unit_disk(srng) * self.lens_radius;
-        let offset = self.u * rd.x + self.v * rd.y;
-
-        let dir = self.lower_left_corner
-                + self.horizontal * s
-                + self.vertical * t 
-                - self.origin - offset;
-        Ray{
-            orig: self.origin + offset,
-            dir,
         }
     }
 }

@@ -1,4 +1,4 @@
-
+#![warn(clippy::all, rust_2018_idioms, rust_2018_compatibility)]
 use rustpt::primitives::{
     Vec2i,
     Vec3,

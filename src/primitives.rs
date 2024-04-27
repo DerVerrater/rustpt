@@ -101,7 +101,7 @@ where T: std::ops::Div<Output = T>{
 
 impl <T> Display for Vec2<T> 
 where T: Display { // nested type still needs to have Display
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
         let str = format!("{} {}", self.x, self.y);
         fmt.write_str(&str)
     }
@@ -370,7 +370,7 @@ impl Neg for Vec3{
 }
 
 impl Display for Vec3 {
-	fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+	fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let str = format!("{} {} {}", self.x, self.y, self.z);
 		fmt.write_str(&str)?;
 		Ok(())

@@ -1,33 +1,23 @@
 #![warn(clippy::all, rust_2018_idioms, rust_2018_compatibility)]
-use rustpt::primitives::{
-    Vec2i,
-    Vec3,
-};
-use rustpt::scene::{
-    Camera,
-    Scene
-};
+use rustpt::primitives::{Vec2i, Vec3};
+use rustpt::scene::{Camera, Scene};
 
-use rustpt::renderer::{
-    Tile,
-    RenderProperties,
-};
+use rustpt::renderer::{RenderProperties, Tile};
 
-use rand::SeedableRng;
 use rand::rngs::SmallRng;
-
+use rand::SeedableRng;
 
 fn main() {
     // image
     let aspect_ratio = 3.0 / 2.0;
     let image = Vec2i {
         x: 400,
-        y: (400.0 / aspect_ratio) as i32
+        y: (400.0 / aspect_ratio) as i32,
     };
 
     let render_config = RenderProperties {
         samples: 10,
-        bounces: 50
+        bounces: 50,
     };
 
     // random generator
@@ -37,20 +27,20 @@ fn main() {
     let scene = Scene {
         camera: Camera::new(
             Vec3::new(13.0, 2.0, 3.0), // lookfrom
-            Vec3::zero(), // lookat
-            Vec3::new(0.0, 1.0, 0.0), // vup
+            Vec3::zero(),              // lookat
+            Vec3::new(0.0, 1.0, 0.0),  // vup
             20.0,
-            aspect_ratio, 
-            0.1, // aperture
+            aspect_ratio,
+            0.1,  // aperture
             10.0, // dist_to_focus
         ),
-        world: Scene::random_world(&mut small_rng)
+        world: Scene::random_world(&mut small_rng),
     };
-    
+
     // render
     // The render loop should now be a job submission mechanism
     // Iterate lines, submitting them as tasks to the thread.
-	println!("P3\n{} {}\n255", image.x, image.y);
+    println!("P3\n{} {}\n255", image.x, image.y);
     // TILE BASED RENDERER
     // let tile = Tile::render_tile(
     //     Rect { x: 0, y: 0, w: image.x, h: image.y },

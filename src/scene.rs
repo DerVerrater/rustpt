@@ -1,11 +1,10 @@
+use crate::primitives::{Ray, Vec3};
 
-use crate::primitives::{Vec3, Ray};
-
-use rand::Rng;
-use rand::rngs::SmallRng;
 use rand::distributions::Uniform;
+use rand::rngs::SmallRng;
+use rand::Rng;
 
-pub struct HitRecord{
+pub struct HitRecord {
     pub p: Vec3,
     pub normal: Vec3,
     pub material: Material,
@@ -13,40 +12,53 @@ pub struct HitRecord{
     pub front_face: bool,
 }
 
-impl HitRecord{
-    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) -> (){
+impl HitRecord {
+    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) -> () {
         self.front_face = Vec3::dot(r.dir, outward_normal) < 0.0;
-        self.normal = if self.front_face { outward_normal } else { -outward_normal };
+        self.normal = if self.front_face {
+            outward_normal
+        } else {
+            -outward_normal
+        };
     }
 }
 
-#[derive (Clone)]
+#[derive(Clone)]
 pub enum Hittable {
-    Sphere { center: Vec3, radius: f32, material: Material },
-    HittableList { hittables: Vec<Hittable> }
+    Sphere {
+        center: Vec3,
+        radius: f32,
+        material: Material,
+    },
+    HittableList {
+        hittables: Vec<Hittable>,
+    },
 }
 
 impl Hittable {
     pub fn hit(&self, r: Ray, t_min: f32, t_max: f32) -> Option<HitRecord> {
         match self {
-            Hittable::HittableList { hittables } => {
-                hittables.iter()
-                .map( |obj| -> Option<HitRecord> {
-                    obj.hit(r, t_min, t_max)
-                }).filter(|obj| obj.is_some())
+            Hittable::HittableList { hittables } => hittables
+                .iter()
+                .map(|obj| -> Option<HitRecord> { obj.hit(r, t_min, t_max) })
+                .filter(|obj| obj.is_some())
                 .min_by(|lhs, rhs| {
                     let lhs = lhs.as_ref().unwrap();
                     let rhs = rhs.as_ref().unwrap();
                     lhs.t.partial_cmp(&rhs.t).expect("Couldn't compare??")
-                }).unwrap_or(None)
-            }
+                })
+                .unwrap_or(None),
 
-            Hittable::Sphere { center, radius, material } => {
+            Hittable::Sphere {
+                center,
+                radius,
+                material,
+            } => {
                 let oc = r.orig - *center;
                 let a = r.dir.length_squared();
                 let half_b = Vec3::dot(oc, r.dir);
                 let c = oc.length_squared() - radius * radius;
-                let discriminant = half_b*half_b - a*c;
+                let discriminant = half_b * half_b - a * c;
 
                 if discriminant < 0.0 {
                     return None;
@@ -61,7 +73,7 @@ impl Hittable {
                         return None;
                     }
                 }
-                let mut record = HitRecord{
+                let mut record = HitRecord {
                     p: r.at(root),
                     normal: (r.at(root) - *center) / *radius,
                     material: *material,
@@ -81,11 +93,10 @@ impl Hittable {
     }
 }
 
-
 #[derive(Copy, Clone, Debug)]
-pub enum Material{
+pub enum Material {
     Lambertian { albedo: Vec3 },
-    Metal { albedo:Vec3, fuzz: f32 },
+    Metal { albedo: Vec3, fuzz: f32 },
     Dielectric { index_refraction: f32 },
 }
 
@@ -103,55 +114,60 @@ impl Material {
                 let scatter_dir = rec.normal + Vec3::rand_unit_vector(srng);
                 // The compiler might be smart enough to compute this ^^^ just once. In which case,
                 // I don't need to do this weird dance. Oh well. It'll work.
-                let scatter_dir = if scatter_dir.near_zero() {  // if near zero,
-                    rec.normal                                  // replace with normal
+                let scatter_dir = if scatter_dir.near_zero() {
+                    // if near zero,
+                    rec.normal // replace with normal
                 } else {
-                    scatter_dir                                 // else preserve current
+                    scatter_dir // else preserve current
                 };
 
                 //TODO: Revisit this out-parameter pattern
                 // It's a side effect of C++'s obtuse move semantics (and the RTIOW author not
                 // using them at all)
-                *scattered = Ray{
+                *scattered = Ray {
                     orig: rec.p,
-                    dir: scatter_dir
+                    dir: scatter_dir,
                 };
                 *attenuation = *albedo; // deref on both sides? Wacky
                 return true;
-            },
+            }
             Material::Metal { albedo, fuzz } => {
-                let reflected = Vec3::reflect(
-                    Vec3::as_unit(ray_in.dir),
-                    rec.normal
-                );
-                *scattered = Ray{
+                let reflected = Vec3::reflect(Vec3::as_unit(ray_in.dir), rec.normal);
+                *scattered = Ray {
                     orig: rec.p,
                     dir: reflected + Vec3::rand_in_unit_sphere(srng) * *fuzz,
                 };
                 *attenuation = *albedo;
                 return Vec3::dot(scattered.dir, rec.normal) > 0.0;
-            },
+            }
             Material::Dielectric { index_refraction } => {
                 *attenuation = Vec3::ones();
-                let refraction_ratio = if rec.front_face { 1.0 / index_refraction } else { *index_refraction };
-                
+                let refraction_ratio = if rec.front_face {
+                    1.0 / index_refraction
+                } else {
+                    *index_refraction
+                };
+
                 let unit_direction = Vec3::as_unit(ray_in.dir);
                 let cos_theta = Vec3::dot(-unit_direction, rec.normal).min(1.0);
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
                 let cannot_refract = refraction_ratio * sin_theta > 1.0;
                 let distrib_zero_one = Uniform::new(0.0, 1.0);
-                let direction = if cannot_refract || Material::reflectance(cos_theta, refraction_ratio) > srng.sample(distrib_zero_one) {
+                let direction = if cannot_refract
+                    || Material::reflectance(cos_theta, refraction_ratio)
+                        > srng.sample(distrib_zero_one)
+                {
                     Vec3::reflect(unit_direction, rec.normal)
                 } else {
                     Vec3::refract(unit_direction, rec.normal, refraction_ratio)
                 };
                 *scattered = Ray {
                     orig: rec.p,
-                    dir: direction 
+                    dir: direction,
                 };
                 return true;
-            },
+            }
         }
     }
 
@@ -174,7 +190,8 @@ pub struct Camera {
     lower_left_corner: Vec3,
     horizontal: Vec3,
     vertical: Vec3,
-    u: Vec3, v: Vec3, /*w: Vec3,*/
+    u: Vec3,
+    v: Vec3, /*w: Vec3,*/
     lens_radius: f32,
 }
 
@@ -187,11 +204,9 @@ impl Camera {
         let rd = Vec3::rand_in_unit_disk(srng) * self.lens_radius;
         let offset = self.u * rd.x + self.v * rd.y;
 
-        let dir = self.lower_left_corner
-                + self.horizontal * s
-                + self.vertical * t 
-                - self.origin - offset;
-        Ray{
+        let dir =
+            self.lower_left_corner + self.horizontal * s + self.vertical * t - self.origin - offset;
+        Ray {
             orig: self.origin + offset,
             dir,
         }
@@ -203,7 +218,11 @@ impl Default for Camera {
         // defaults are the same as the hard-coded properties passed from main
         // ... except for the `lookfrom` position: (13.0, 2.0, 3.0) became (10.0, 0..)
         let lookfrom = Vec3::new(10.0, 0.0, 0.0);
-        let lookat = Vec3 { x: 1.0, y: 0.0, z: 0.0 };
+        let lookat = Vec3 {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+        };
         let vup = Vec3::new(0.0, 1.0, 0.0);
         let vfov = 20.0;
         let aspect_ratio = 3.0 / 2.0;
@@ -224,17 +243,17 @@ impl Default for Camera {
         let verti = v * vp_height * focus_dist;
         let lower_left_corner = orig - horiz / 2.0 - verti / 2.0 - w * focus_dist;
 
-        Camera{
+        Camera {
             origin: orig,
             lower_left_corner,
             horizontal: horiz,
             vertical: verti,
-            u, v, /* w,*/
+            u,
+            v, /* w,*/
             lens_radius: aperture / 2.0,
         }
     }
 }
-
 
 pub struct Scene {
     pub camera: Camera,
@@ -243,11 +262,19 @@ pub struct Scene {
 
 impl Scene {
     pub fn random_world(srng: &mut SmallRng) -> Hittable {
-        let mat_ground = Material::Lambertian { albedo: Vec3::new(0.5, 0.5, 0.5) };
-        let mut world = Hittable::HittableList { hittables : Vec::<Hittable>::new() };
-        
-        world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: mat_ground });
-        
+        let mat_ground = Material::Lambertian {
+            albedo: Vec3::new(0.5, 0.5, 0.5),
+        };
+        let mut world = Hittable::HittableList {
+            hittables: Vec::<Hittable>::new(),
+        };
+
+        world.push(Hittable::Sphere {
+            center: Vec3::new(0.0, -1000.0, 0.0),
+            radius: 1000.0,
+            material: mat_ground,
+        });
+
         let distrib_zero_one = Uniform::new(0.0, 1.0);
         for a in -11..11 {
             for b in -11..11 {
@@ -258,18 +285,16 @@ impl Scene {
                     z: b as f32 + 0.9 * srng.sample(distrib_zero_one),
                 };
                 if (center - Vec3::new(4.0, 0.2, 0.0)).length() > 0.9 {
-
                     if choose_mat < 0.8 {
                         // diffuse
-                        let albedo = Vec3::rand(srng, distrib_zero_one) * Vec3::rand(srng, distrib_zero_one);
+                        let albedo =
+                            Vec3::rand(srng, distrib_zero_one) * Vec3::rand(srng, distrib_zero_one);
                         let sphere_material = Material::Lambertian { albedo };
-                        world.push(
-                            Hittable::Sphere {
-                                center,
-                                radius: 0.2,
-                                material: sphere_material,
-                            }
-                        );
+                        world.push(Hittable::Sphere {
+                            center,
+                            radius: 0.2,
+                            material: sphere_material,
+                        });
                     } else if choose_mat < 0.95 {
                         // metal
                         let distr_albedo = Uniform::new(0.5, 1.0);
@@ -278,48 +303,52 @@ impl Scene {
                         let albedo = Vec3::rand(srng, distr_albedo);
                         let fuzz = srng.sample(distr_fuzz);
                         let material = Material::Metal { albedo, fuzz };
-                        world.push(
-                            Hittable::Sphere {
-                                center,
-                                radius: 0.2,
-                                material: material,
-                            }
-                        );
+                        world.push(Hittable::Sphere {
+                            center,
+                            radius: 0.2,
+                            material: material,
+                        });
                     } else {
                         // glass
-                        let material = Material::Dielectric { index_refraction: 1.5 };
-                        world.push(
-                            Hittable::Sphere{
-                                center,
-                                radius: 0.2,
-                                material: material,
-                            }
-                        );
-
+                        let material = Material::Dielectric {
+                            index_refraction: 1.5,
+                        };
+                        world.push(Hittable::Sphere {
+                            center,
+                            radius: 0.2,
+                            material: material,
+                        });
                     };
                 }
             }
         }
 
-        let material1 = Material::Dielectric { index_refraction: 1.5 };
-        world.push( Hittable::Sphere{
+        let material1 = Material::Dielectric {
+            index_refraction: 1.5,
+        };
+        world.push(Hittable::Sphere {
             center: Vec3::new(0.0, 1.0, 0.0),
             radius: 1.0,
-            material: material1
+            material: material1,
         });
 
-        let material2 = Material::Lambertian { albedo: Vec3::new(0.4, 0.2, 0.1) };
-        world.push( Hittable::Sphere {
+        let material2 = Material::Lambertian {
+            albedo: Vec3::new(0.4, 0.2, 0.1),
+        };
+        world.push(Hittable::Sphere {
             center: Vec3::new(-4.0, 1.0, 0.0),
             radius: 1.0,
-            material: material2
+            material: material2,
         });
 
-        let material3 = Material::Metal { albedo: Vec3::new(0.7, 0.6, 0.5), fuzz: 0.0 };
-        world.push( Hittable::Sphere {
+        let material3 = Material::Metal {
+            albedo: Vec3::new(0.7, 0.6, 0.5),
+            fuzz: 0.0,
+        };
+        world.push(Hittable::Sphere {
             center: Vec3::new(4.0, 1.0, 0.0),
             radius: 1.0,
-            material: material3
+            material: material3,
         });
         world
     }

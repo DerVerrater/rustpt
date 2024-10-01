@@ -7,14 +7,13 @@ fn main() -> Result<(), eframe::Error> {
             .with_inner_size([800.0, 600.0])
             .with_min_inner_size([50.0, 50.0])
             .with_title("RustPT GUI Tool"),
-            ..Default::default()
+        ..Default::default()
     };
     eframe::run_native(
         "app name?",
         options,
-    Box::new(
-        | cc | Box::new(RtApp::new(cc))
-    ))
+        Box::new(|cc| Box::new(RtApp::new(cc))),
+    )
 }
 
 #[derive(Default)]

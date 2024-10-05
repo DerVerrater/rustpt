@@ -42,6 +42,5 @@ jobs:
           path: target/release/another-boids-in-rust
           if-no-files-found: 'error'
           retention-days: 1
-          compression-level: 9
           overwrite: true 
       

@@ -39,8 +39,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: another-boids-in-rust
-          path: target/release/another-boids-in-rust
+          path: target/release/rustpt_cli
           if-no-files-found: 'error'
           retention-days: 1
-          overwrite: true 
-      

@@ -15,7 +15,7 @@ use std::fmt::Display;
 
 use rand::Rng;
 use rand::rngs::SmallRng;
-use rand::distributions::Uniform;
+use rand::distr::Uniform;
 
 pub type Vec2i = Vec2<i32>;
 pub type Vec2f = Vec2<f32>;
@@ -144,7 +144,7 @@ impl Vec3{
     }
 
     pub fn rand_in_unit_sphere(srng: &mut SmallRng) -> Vec3 {
-        let distrib = Uniform::new(-1.0, 1.0);
+        let distrib = Uniform::new(-1.0, 1.0).unwrap();
         loop {
             let p = Vec3::rand(srng, distrib);
             if p.length_squared() >= 1.0 { continue; }
@@ -156,8 +156,8 @@ impl Vec3{
         let distrib = Uniform::new(-1.0, 1.0);
         loop {
             let p = Vec3 {
-                x: srng.sample(distrib),
-                y: srng.sample(distrib),
+                x: srng.sample(distrib.unwrap()),
+                y: srng.sample(distrib.unwrap()),
                 z: 0.0,
             };
             if p.length_squared() >= 1.0 { continue; }

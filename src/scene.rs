@@ -3,7 +3,7 @@ use crate::primitives::{Vec3, Ray};
 
 use rand::Rng;
 use rand::rngs::SmallRng;
-use rand::distributions::Uniform;
+use rand::distr::Uniform;
 
 pub struct HitRecord{
     pub p: Vec3,
@@ -140,7 +140,7 @@ impl Material {
                 let sin_theta = (1.0 - cos_theta * cos_theta).sqrt();
 
                 let cannot_refract = refraction_ratio * sin_theta > 1.0;
-                let distrib_zero_one = Uniform::new(0.0, 1.0);
+                let distrib_zero_one = Uniform::new(0.0, 1.0).unwrap();
                 let direction = if cannot_refract || Material::reflectance(cos_theta, refraction_ratio) > srng.sample(distrib_zero_one) {
                     Vec3::reflect(unit_direction, rec.normal)
                 } else {
@@ -240,7 +240,7 @@ impl Scene {
         
         world.push( Hittable::Sphere { center: Vec3::new(0.0, -1000.0, 0.0), radius: 1000.0, material: mat_ground });
         
-        let distrib_zero_one = Uniform::new(0.0, 1.0);
+        let distrib_zero_one = Uniform::new(0.0, 1.0).unwrap();
         for a in -11..11 {
             for b in -11..11 {
                 let choose_mat = srng.sample(distrib_zero_one);
@@ -264,8 +264,8 @@ impl Scene {
                         );
                     } else if choose_mat < 0.95 {
                         // metal
-                        let distr_albedo = Uniform::new(0.5, 1.0);
-                        let distr_fuzz = Uniform::new(0.0, 0.5);
+                        let distr_albedo = Uniform::new(0.5, 1.0).unwrap();
+                        let distr_fuzz = Uniform::new(0.0, 0.5).unwrap();
 
                         let albedo = Vec3::rand(srng, distr_albedo);
                         let fuzz = srng.sample(distr_fuzz);

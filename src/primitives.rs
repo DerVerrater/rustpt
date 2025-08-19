@@ -176,7 +176,7 @@ impl Vec3 {
     }
 
     pub fn rand_unit_vector(srng: &mut SmallRng) -> Vec3 {
-        return Vec3::as_unit(Vec3::rand_in_unit_sphere(srng));
+        Vec3::as_unit(Vec3::rand_in_unit_sphere(srng))
     }
 
     pub fn length(&self) -> f32 {
@@ -204,11 +204,11 @@ impl Vec3 {
 
     pub fn near_zero(&self) -> bool {
         let epsilon: f32 = 1e-4;
-        return self.x.abs() < epsilon && self.y.abs() < epsilon && self.z.abs() < epsilon;
+        self.x.abs() < epsilon && self.y.abs() < epsilon && self.z.abs() < epsilon
     }
 
     pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
-        return v - n * Vec3::dot(v, n) * 2.0;
+        v - n * Vec3::dot(v, n) * 2.0
     }
 
     pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f32) -> Vec3 {

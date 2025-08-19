@@ -13,7 +13,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) -> () {
+    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) {
         self.front_face = Vec3::dot(r.dir, outward_normal) < 0.0;
         self.normal = if self.front_face {
             outward_normal
@@ -129,7 +129,7 @@ impl Material {
                     dir: scatter_dir,
                 };
                 *attenuation = *albedo; // deref on both sides? Wacky
-                return true;
+                true
             }
             Material::Metal { albedo, fuzz } => {
                 let reflected = Vec3::reflect(Vec3::as_unit(ray_in.dir), rec.normal);
@@ -138,7 +138,7 @@ impl Material {
                     dir: reflected + Vec3::rand_in_unit_sphere(srng) * *fuzz,
                 };
                 *attenuation = *albedo;
-                return Vec3::dot(scattered.dir, rec.normal) > 0.0;
+                Vec3::dot(scattered.dir, rec.normal) > 0.0
             }
             Material::Dielectric { index_refraction } => {
                 *attenuation = Vec3::ones();
@@ -166,7 +166,7 @@ impl Material {
                     orig: rec.p,
                     dir: direction,
                 };
-                return true;
+                true
             }
         }
     }
@@ -175,7 +175,7 @@ impl Material {
         // Schlick's approximation for reflectance.
         let r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
         let r0 = r0 * r0;
-        return r0 + (1.0 - r0) * (1.0 - cosine).powf(5.0);
+        r0 + (1.0 - r0) * (1.0 - cosine).powf(5.0)
     }
 }
 
@@ -294,7 +294,7 @@ impl Scene {
                         world.push(Hittable::Sphere {
                             center,
                             radius: 0.2,
-                            material: material,
+                            material,
                         });
                     } else {
                         // glass
@@ -304,7 +304,7 @@ impl Scene {
                         world.push(Hittable::Sphere {
                             center,
                             radius: 0.2,
-                            material: material,
+                            material,
                         });
                     };
                 }

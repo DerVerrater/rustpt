@@ -50,7 +50,7 @@ fn ray_color(r: Ray, surface: &Hittable, depth: u32, rng: &mut SmallRng) -> Vec3
         // when nothing is struck, return sky color
         let unitdir = Vec3::as_unit(r.dir);
         let t = 0.5 * (unitdir.y + 1.0);
-        return Vec3::ones() * (1.0 - t) + SKY_COLOR * t;
+        Vec3::ones() * (1.0 - t) + SKY_COLOR * t
     }
 }
 

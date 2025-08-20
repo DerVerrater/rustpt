@@ -46,12 +46,10 @@ fn ray_color(r: Ray, surface: &Hittable, depth: u32, rng: &mut SmallRng) -> Vec3
     // when the else path is taken. This is a problem for a function
     // that returns Vec3 and not ().
 
-    {
-        // when nothing is struck, return sky color
-        let unitdir = Vec3::as_unit(r.dir);
-        let t = 0.5 * (unitdir.y + 1.0);
-        Vec3::ones() * (1.0 - t) + SKY_COLOR * t
-    }
+    // when nothing is struck, return sky color
+    let unitdir = Vec3::as_unit(r.dir);
+    let t = 0.5 * (unitdir.y + 1.0);
+    Vec3::ones() * (1.0 - t) + SKY_COLOR * t
 }
 
 fn sample_pixel(

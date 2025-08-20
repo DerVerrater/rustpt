@@ -141,7 +141,7 @@ impl Material {
                 Vec3::dot(scattered.dir, rec.normal) > 0.0
             }
             Material::Dielectric { index_refraction } => {
-                *attenuation = Vec3::ones();
+                *attenuation = Vec3::ONES;
                 let refraction_ratio = if rec.front_face {
                     1.0 / index_refraction
                 } else {

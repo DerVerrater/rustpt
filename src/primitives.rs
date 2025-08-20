@@ -123,21 +123,24 @@ impl Vec3 {
         Vec3 { x, y, z }
     }
 
-    pub fn zero() -> Vec3 {
-        Vec3 {
-            x: 0.0,
-            y: 0.0,
-            z: 0.0,
-        }
-    }
+    pub const ZERO: Self = Vec3 {
+        x: 0.0,
+        y: 0.0,
+        z: 0.0,
+    };
 
-    pub fn ones() -> Vec3 {
-        Vec3 {
-            x: 1.0,
-            y: 1.0,
-            z: 1.0,
-        }
-    }
+    pub const ONES: Self = Vec3 {
+        x: 1.0,
+        y: 1.0,
+        z: 1.0,
+    };
+
+    /// "Up" is considered to be positive-y
+    pub const UP: Self = Vec3 {
+        x: 0.0,
+        y: 1.0,
+        z: 0.0,
+    };
 
     pub fn rand(srng: &mut SmallRng, distrib: Uniform<f32>) -> Vec3 {
         Vec3 {

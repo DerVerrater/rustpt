@@ -25,16 +25,16 @@ fn to_uv(coord: Vec2i, img_size: Vec2i) -> Vec2f {
 fn ray_color(r: Ray, surface: &Hittable, depth: u32, rng: &mut SmallRng) -> Vec3 {
     // recursion guard
     if depth == 0 {
-        return Vec3::zero();
+        return Vec3::ZERO;
     }
 
     // cast a ray, interrogate hit record
     if let Some(record) = surface.hit(r, 0.001, f32::INFINITY) {
         let mut scattered = Ray {
-            orig: Vec3::zero(),
-            dir: Vec3::zero(),
+            orig: Vec3::ZERO,
+            dir: Vec3::ZERO,
         };
-        let mut attenuation = Vec3::zero();
+        let mut attenuation = Vec3::ZERO;
         if record
             .material
             .scatter(r, &record, &mut attenuation, &mut scattered, rng)
@@ -49,7 +49,7 @@ fn ray_color(r: Ray, surface: &Hittable, depth: u32, rng: &mut SmallRng) -> Vec3
     // when nothing is struck, return sky color
     let unitdir = Vec3::as_unit(r.dir);
     let t = 0.5 * (unitdir.y + 1.0);
-    Vec3::ones() * (1.0 - t) + SKY_COLOR * t
+    Vec3::ONES * (1.0 - t) + SKY_COLOR * t
 }
 
 fn sample_pixel(
@@ -60,7 +60,7 @@ fn sample_pixel(
     // Supplied by the execution environment (the thread)
     rng: &mut SmallRng,
 ) -> Vec3 {
-    (0..render_props.samples).fold(Vec3::zero(), |color, _sample| -> Vec3 {
+    (0..render_props.samples).fold(Vec3::ZERO, |color, _sample| -> Vec3 {
         let uv = to_uv(coord, img_size);
         let ray = scene.camera.get_ray(uv.x, uv.y, rng);
         if ray.dir.x.is_nan() {

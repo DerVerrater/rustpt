@@ -29,9 +29,9 @@ fn main() {
     // Scene (now includes camera)
     let scene = Scene {
         camera: Camera::new(
-            Vec3::new(13.0, 2.0, 3.0), // lookfrom
-            Vec3::zero(),              // lookat
-            Vec3::new(0.0, 1.0, 0.0),  // vup
+            Vec3::new(13.0, 2.0, 3.0),  // lookfrom
+            Vec3::ZERO,                 // lookat
+            Vec3::UP,                   // vup
             20.0,
             aspect_ratio,
             0.1,  // aperture
